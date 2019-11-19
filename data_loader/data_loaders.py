@@ -31,7 +31,7 @@ class RopeTrajectoryDataset(Dataset):
         with open(json_path) as f:
             actions = json.load(f)
 
-        return depth_image, actions
+        return {'depth': depth_image, 'actions': actions}
 
     def __len__(self):
         return len(self.timestamps)
