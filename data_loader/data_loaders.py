@@ -7,12 +7,25 @@ import cv2
 import json
 
 from torch.utils.data import Dataset, DataLoader
+from dense_correspondence_network import DenseCorrespondenceNetwork
+from find_correspondences import CorrespondenceFinder
 
 class RopeTrajectoryDataset(Dataset):
     """ Rope trajectory dataset """
-    def __init__(self, data_dir, transform=None):
+    def __init__(self, data_dir, network_dir, network, cfg_dir='../cfg', transform=None):
         self.data_dir = data_dir
         self.timestamps, self.depth_list, self.json_list, self.mask_list, self.npy_list = self.filter_trajectories() 
+
+        # Path to network 
+        network_path = os.path.join(network_dir, network)
+        self.dcn = DenseCorrespondenceNetwork.from_model_folder(network_path, model_param_file=os.path.join(network_path, '003501.pth'))
+        self.dcn.eval()
+        with open(os.path.join(cfg_dir, 'dataset_info.json'), 'r') as f:
+            dataset_stats = json.load(f)
+        dataset_mean, dataset_std_dev = dataset_stats["mean"], dataset_stats["std_dev"]
+        self.cf = CorrespondenceFinder(dcn, dataset_mean, dataset_std_dev)
+        self.descriptor_stats_config = os.path.join(network_path, 'descriptor_statistics.yaml')
+
 
     def __getitem__(self, idx):
         depth_path = self.depth_list(idx)
@@ -20,11 +33,13 @@ class RopeTrajectoryDataset(Dataset):
         mask_path = self.mask_list(idx)
         npy_path = self.npy_list(idx)
 
-        depth_image = cv2.imread(depth_path)
+        desc_image = make_descriptors_images(self.cf, args.image_dir, args.save_dir, descriptor_stats_config, 
+                                             make_masked_video=args.mask, mask_folder=args.mask_dir)
+
         with open(json_path) as f:
             actions = json.load(f)
 
-        return {'depth': depth_image, 'actions': actions}
+        return {'desc': desc_image, 'actions': actions}
 
     def __len__(self):
         return len(self.depth_list)
@@ -57,15 +72,38 @@ class RopeTrajectoryDataset(Dataset):
         return list(set(timestamps)), depth_list, json_list, mask_list, np_list
 
 
-# class MnistDataLoader(BaseDataLoader):
-#     """
-#     MNIST data loading demo using BaseDataLoader
-#     """
-#     def __init__(self, data_dir, batch_size, shuffle=True, validation_split=0.0, num_workers=1, training=True):
-#         trsfm = transforms.Compose([
-#             transforms.ToTensor(),
-#             transforms.Normalize((0.1307,), (0.3081,))
-#         ])
-#         self.data_dir = data_dir
-#         self.dataset = datasets.MNIST(self.data_dir, train=training, download=True, transform=trsfm)
-#         super().__init__(self.dataset, batch_size, shuffle, validation_split, num_workers)
+    def make_descriptors_images(self, image_path):
+        rgb_a = Image.open(image_path).convert('RGB')
+
+        # compute dense descriptors
+        # This takes in a PIL image!
+        rgb_a_tensor = self.cf.rgb_image_to_tensor(rgb_a)
+
+        # these are Variables holding torch.FloatTensors, first grab the data, then convert to numpy
+        res_a = self.cf.dcn.forward_single_image_tensor(rgb_a_tensor).data.cpu().numpy()
+        #descriptor_image_stats = yaml.load(file(descriptor_stats_config), Loader=CLoader)
+        descriptor_image_stats = yaml.load(file(self.descriptor_stats_config))
+        res_a = self.normalize_descriptor(res_a, descriptor_image_stats["mask_image"])
+        return res_a
+
+    def normalize_descriptor(self, res, stats=None):
+        """
+        Normalizes the descriptor into RGB color space
+        :param res: numpy.array [H,W,D]
+            Output of the network, per-pixel dense descriptor
+        :param stats: dict, with fields ['min', 'max', 'mean'], which are used to normalize descriptor
+        :return: numpy.array
+            normalized descriptor
+        """
+        if stats is None:
+            res_min = res.min()
+            res_max = res.max()
+        else:
+            res_min = np.array(stats['min'])
+            res_max = np.array(stats['max'])
+
+        normed_res = np.clip(res, res_min, res_max)
+        eps = 1e-10
+        scale = (res_max - res_min) + eps
+        normed_res = (normed_res - res_min) / scale
+        return normed_res
