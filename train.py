@@ -2,13 +2,18 @@ import argparse
 import collections
 import torch
 import numpy as np
-import data_loader.data_loaders as module_data
-import model.loss as module_loss
-import model.metric as module_metric
-import model.model as module_arch
+
+from data_loader.data_loaders import RopeTrajectoryDataset
+from model.model import BasicModel
 from parse_config import ConfigParser
 from trainer import Trainer
 
+import torch
+import torch.nn as nn
+import torch.nn.init as init
+from torch.autograd import Variable
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader
 
 # fix random seeds for reproducibility
 SEED = 123
@@ -17,50 +22,62 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 np.random.seed(SEED)
 
-def main(config):
-    logger = config.get_logger('train')
+def main(args):
+    rope_dataset = RopeTrajectoryDataset(args.data_dir, args.network_dir, args.network, 
+                                         cfg_dir=args.config, transform=None)
+    dataloader = DataLoader(rope_dataset, batch_size=args.batch_size, shuffle=True, 
+                            num_workers=args.num_workers)
+    model = BasicModel()
+    optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
+    criterion = nn.MSELoss()
 
-    # setup data_loader instances
-    data_loader = config.init_obj('data_loader', module_data)
-    valid_data_loader = data_loader.split_validation()
+    for epoch in range(args.num_epoch):
+        model.train()
+        train_loss = 0
+        for idx, (obs, target) in enumerate(dataloader):
+            # TODO: split into training and validation sets if dataset is big enough....
+            optimizer.zero_grad()
+            pred = model(obs)
+            loss = criterion(pred, target)
+            loss.backward()
+            optimizer.step()
+            train_loss += loss.data[0]
 
-    # build model architecture, then print to console
-    model = config.init_obj('arch', module_arch)
-    logger.info(model)
-
-    # get function handles of loss and metrics
-    criterion = getattr(module_loss, config['loss'])
-    metrics = [getattr(module_metric, met) for met in config['metrics']]
-
-    # build optimizer, learning rate scheduler. delete every lines containing lr_scheduler for disabling scheduler
-    trainable_params = filter(lambda p: p.requires_grad, model.parameters())
-    optimizer = config.init_obj('optimizer', torch.optim, trainable_params)
-
-    lr_scheduler = config.init_obj('lr_scheduler', torch.optim.lr_scheduler, optimizer)
-
-    trainer = Trainer(model, criterion, metrics, optimizer,
-                      config=config,
-                      data_loader=data_loader,
-                      valid_data_loader=valid_data_loader,
-                      lr_scheduler=lr_scheduler)
-
-    trainer.train()
-
+            if idx % args.log_step == 0:
+                print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Perplexity: {:5.4f}'
+                      .format(epoch, args.num_epochs, i, total_step, loss.item(), np.exp(loss.item())))
+            # TODO: save on validation
+            if args.model_path not None and (((i+1) % args.save_step == 0) or (i == total_step-1)): 
+                torch.save(model.state_dict(), os.path.join(args.model_path, 'model-{}-{}.ckpt'.format(epoch+1, i+1)))
+        print('Train loss: -----epoch {}----- : {}'.format(epoch, train_loss))
 
 if __name__ == '__main__':
     args = argparse.ArgumentParser(description='PyTorch Template')
-    args.add_argument('-c', '--config', default=None, type=str,
+    # vis-descriptor specific file paths
+    args.add_argument('--config', default=None, type=str,
                       help='config file path (default: None)')
-    args.add_argument('-r', '--resume', default=None, type=str,
-                      help='path to latest checkpoint (default: None)')
-    args.add_argument('-d', '--device', default=None, type=str,
-                      help='indices of GPUs to enable (default: all)')
+    args.add_argument('--data_dir', default=None, type=str,
+                      help='directory to data')
+    args.add_argument('--netwok_dir', default=None, type=str,
+                      help='directory to vis_descriptor network')
+    args.add_argument('--network', default=None, type=str,
+                      help='filename of vis_descriptor network')
 
-    # custom cli options to modify configuration from default values given in json file.
-    CustomArgs = collections.namedtuple('CustomArgs', 'flags type target')
-    options = [
-        CustomArgs(['--lr', '--learning_rate'], type=float, target='optimizer;args;lr'),
-        CustomArgs(['--bs', '--batch_size'], type=int, target='data_loader;args;batch_size')
-    ]
-    config = ConfigParser.from_args(args, options)
-    main(config)
+    # network-specific arguments
+    args.add_argument('--num_workers', default=4, type=int,
+                  help='number of workers')
+    args.add_argument('--batch_size', default=32, type=int,
+                  help='batch size')
+    args.add_argument('--num_epoch', default=20, type=int,
+                  help='number of epochs')
+    args.add_argument('--learning_rate', default=0.0001, type=int,
+                  help='learning rate')
+    args.add_argument('--model_path', default=None, type=int,
+                  help='save model location')
+
+    # logging arguments
+    args.add_argument('--log_step', default=None, type=int,
+                  help='frequency to log')
+    args.add_argument('--save_step', default=None, type=int,
+                  help='frequency to save')
+    main(args)
