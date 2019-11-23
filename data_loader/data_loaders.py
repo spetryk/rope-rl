@@ -36,10 +36,15 @@ class RopeTrajectoryDataset(Dataset):
         npy_path = self.npy_list[idx]
 
         desc_image = self.make_descriptors_images(depth_path)
+        actions = []
         with open(json_path) as f:
-            actions = json.load(f)
+            js = json.load(f)
+            actions.append(np.array(js['grasp']))
+            actions.append(np.array(js['drop']))
+            actions.append(np.array(js['orientation']))
 
-        return desc_image, actions
+        actions = np.hstack(actions)
+        return desc_image, list(actions)
 
     def __len__(self):
         return len(self.depth_list)

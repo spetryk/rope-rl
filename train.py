@@ -26,20 +26,33 @@ def main(args):
     dataloader = DataLoader(rope_dataset, batch_size=args.batch_size, shuffle=True, 
                             num_workers=args.num_workers)
     model = BasicModel()
+    model = model.float()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     criterion = nn.MSELoss()
-
+    
+    print("******pre-loop")
     for epoch in range(args.num_epoch):
         model.train()
         train_loss = 0
-        for idx, (obs, target) in enumerate(dataloader):
+        for idx, (obs, targets) in enumerate(dataloader):
+            print("******pre-optimizer")
             # TODO: split into training and validation sets if dataset is big enough....
             optimizer.zero_grad()
-            pred = model(obs)
-            loss = criterion(pred, target)
+            pred = model(obs.float())
+            t = targets[0]
+            print("pre-targets", targets)
+            for i in range(1, len(targets)):
+                t = torch.stack((t, targets[i]), dim=0)
+            targets = targets.reshape((args.batch_size, pred.shape[1])).float()
+            print("pred", pred.shape)
+            print("post-targets", targets)
+
+            loss = criterion(pred, targets)
+            print("******post-loss")
             loss.backward()
             optimizer.step()
             train_loss += loss.data[0]
+            print("******post-step")
 
             if idx % args.log_step == 0:
                 print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Perplexity: {:5.4f}'
@@ -64,7 +77,7 @@ if __name__ == '__main__':
     # network-specific arguments
     parser.add_argument('--num_workers', default=4, type=int,
                   help='number of workers')
-    parser.add_argument('--batch_size', default=32, type=int,
+    parser.add_argument('--batch_size', default=2, type=int,
                   help='batch size')
     parser.add_argument('--num_epoch', default=20, type=int,
                   help='number of epochs')
@@ -74,9 +87,9 @@ if __name__ == '__main__':
                   help='save model location')
 
     # logging arguments
-    parser.add_argument('--log_step', default=None, type=int,
+    parser.add_argument('--log_step', default=1, type=int,
                   help='frequency to log')
-    parser.add_argument('--save_step', default=None, type=int,
+    parser.add_argument('--save_step', default=5, type=int,
                   help='frequency to save')
     args = parser.parse_args()
     main(args)

@@ -13,7 +13,7 @@ class BasicModel(nn.Module):
     def __init__(self):
         super(BasicModel, self).__init__()
         self.conv_layers = nn.Sequential(
-            # input is batch_size x 3 x 16 x 32
+            # input is batch_size //x 3 x 16 x 32
             nn.Conv2d(3, 24, 3, stride=2, bias=False),
             nn.ELU(),
             nn.Conv2d(24, 48, 3, stride=2, bias=False),
@@ -22,7 +22,7 @@ class BasicModel(nn.Module):
         )
         self.linear_layers = nn.Sequential(
             #input from sequential conv layers
-            nn.Linear(in_features=48*4*19, out_features=50, bias=False),
+            nn.Linear(in_features=48*4*768, out_features=50, bias=False),
             nn.ELU(),
             nn.Linear(in_features=50, out_features=20, bias=False),
             nn.Linear(in_features=20, out_features=7, bias=False),
@@ -40,8 +40,11 @@ class BasicModel(nn.Module):
                 init.constant(m.bias, 0)
 
     def forward(self, input):
-        input = input.view(input.size(0), 3, 75, 320)
+        input = input.view(input.size(0), 772, 1032, 3)
+        input = input.permute(0, 3, 1, 2)
+        print("input", input.shape)
         output = self.conv_layers(input)
         output = output.view(output.size(0), -1)
+        print("output", output.shape)
         output = self.linear_layers(output)
         return output    
