@@ -5,10 +5,12 @@ import numpy as np
 import re
 import cv2
 import json
+import yaml
 
+from PIL import Image
 from torch.utils.data import Dataset, DataLoader
-from dense_correspondence_network import DenseCorrespondenceNetwork
-from find_correspondences import CorrespondenceFinder
+from tools.dense_correspondence_network import DenseCorrespondenceNetwork
+from tools.find_correspondences import CorrespondenceFinder
 
 class RopeTrajectoryDataset(Dataset):
     """ Rope trajectory dataset """
@@ -23,19 +25,17 @@ class RopeTrajectoryDataset(Dataset):
         with open(os.path.join(cfg_dir, 'dataset_info.json'), 'r') as f:
             dataset_stats = json.load(f)
         dataset_mean, dataset_std_dev = dataset_stats["mean"], dataset_stats["std_dev"]
-        self.cf = CorrespondenceFinder(dcn, dataset_mean, dataset_std_dev)
+        self.cf = CorrespondenceFinder(self.dcn, dataset_mean, dataset_std_dev)
         self.descriptor_stats_config = os.path.join(network_path, 'descriptor_statistics.yaml')
 
 
     def __getitem__(self, idx):
-        depth_path = self.depth_list(idx)
-        json_path = self.json_list(idx)
-        mask_path = self.mask_list(idx)
-        npy_path = self.npy_list(idx)
+        depth_path = self.depth_list[idx]
+        json_path = self.json_list[idx]
+        mask_path = self.mask_list[idx]
+        npy_path = self.npy_list[idx]
 
-        desc_image = make_descriptors_images(self.cf, args.image_dir, args.save_dir, descriptor_stats_config, 
-                                             make_masked_video=args.mask, mask_folder=args.mask_dir)
-
+        desc_image = self.make_descriptors_images(depth_path)
         with open(json_path) as f:
             actions = json.load(f)
 
@@ -68,8 +68,9 @@ class RopeTrajectoryDataset(Dataset):
                     json_list.append(os.path.join(self.data_dir, "json/", '{}_{}.json'.format(ts, ac_idx)))
                     mask_list.append(os.path.join(self.data_dir, "mask/", '{}_segmask_{}.png'.format(ts, ob_idx)))
                     npy_list.append(os.path.join(self.data_dir, "npy/", '{}_raw_depth_{}.npy'.format(ts, ob_idx)))
-
-        return list(set(timestamps)), depth_list, json_list, mask_list, np_list
+        
+        print("dataset_size", len(depth_list))
+        return list(set(timestamps)), depth_list, json_list, mask_list, npy_list
 
 
     def make_descriptors_images(self, image_path):

@@ -3,10 +3,8 @@ import collections
 import torch
 import numpy as np
 
-from data_loader.data_loaders import RopeTrajectoryDataset
-from model.model import BasicModel
-from parse_config import ConfigParser
-from trainer import Trainer
+from behavioral_cloning.data_loader.data_loaders import RopeTrajectoryDataset
+from behavioral_cloning.model.model import BasicModel
 
 import torch
 import torch.nn as nn
@@ -47,37 +45,38 @@ def main(args):
                 print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Perplexity: {:5.4f}'
                       .format(epoch, args.num_epochs, i, total_step, loss.item(), np.exp(loss.item())))
             # TODO: save on validation
-            if args.model_path not None and (((i+1) % args.save_step == 0) or (i == total_step-1)): 
+            if args.model_path is not None and (((i+1) % args.save_step == 0) or (i == total_step-1)): 
                 torch.save(model.state_dict(), os.path.join(args.model_path, 'model-{}-{}.ckpt'.format(epoch+1, i+1)))
         print('Train loss: -----epoch {}----- : {}'.format(epoch, train_loss))
 
 if __name__ == '__main__':
-    args = argparse.ArgumentParser(description='PyTorch Template')
+    parser = argparse.ArgumentParser(description='PyTorch Template')
     # vis-descriptor specific file paths
-    args.add_argument('--config', default=None, type=str,
-                      help='config file path (default: None)')
-    args.add_argument('--data_dir', default=None, type=str,
+    parser.add_argument('--config', default='cfg', type=str,
+                      help='path to config')
+    parser.add_argument('--data_dir', default='data/', type=str,
                       help='directory to data')
-    args.add_argument('--netwok_dir', default=None, type=str,
+    parser.add_argument('--network_dir', default='/nfs/diskstation/priya/rope_networks/', type=str,
                       help='directory to vis_descriptor network')
-    args.add_argument('--network', default=None, type=str,
+    parser.add_argument('--network', default='rope_noisy_1400_depth_norm_3', type=str,
                       help='filename of vis_descriptor network')
 
     # network-specific arguments
-    args.add_argument('--num_workers', default=4, type=int,
+    parser.add_argument('--num_workers', default=4, type=int,
                   help='number of workers')
-    args.add_argument('--batch_size', default=32, type=int,
+    parser.add_argument('--batch_size', default=32, type=int,
                   help='batch size')
-    args.add_argument('--num_epoch', default=20, type=int,
+    parser.add_argument('--num_epoch', default=20, type=int,
                   help='number of epochs')
-    args.add_argument('--learning_rate', default=0.0001, type=int,
+    parser.add_argument('--learning_rate', default=0.0001, type=int,
                   help='learning rate')
-    args.add_argument('--model_path', default=None, type=int,
+    parser.add_argument('--model_path', default=None, type=int,
                   help='save model location')
 
     # logging arguments
-    args.add_argument('--log_step', default=None, type=int,
+    parser.add_argument('--log_step', default=None, type=int,
                   help='frequency to log')
-    args.add_argument('--save_step', default=None, type=int,
+    parser.add_argument('--save_step', default=None, type=int,
                   help='frequency to save')
+    args = parser.parse_args()
     main(args)
