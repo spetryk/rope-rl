@@ -2,6 +2,7 @@ import argparse
 import collections
 import torch
 import numpy as np
+import os
 
 from behavioral_cloning.data_loader.data_loaders import RopeTrajectoryDataset
 from behavioral_cloning.model.model import BasicModel
@@ -30,36 +31,31 @@ def main(args):
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     criterion = nn.MSELoss()
     
-    print("******pre-loop")
+    total_step = len(dataloader)
+    print("total step:", total_step)
     for epoch in range(args.num_epoch):
         model.train()
         train_loss = 0
         for idx, (obs, targets) in enumerate(dataloader):
-            print("******pre-optimizer")
             # TODO: split into training and validation sets if dataset is big enough....
             optimizer.zero_grad()
             pred = model(obs.float())
-            t = targets[0]
-            print("pre-targets", targets)
-            for i in range(1, len(targets)):
-                t = torch.stack((t, targets[i]), dim=0)
-            targets = targets.reshape((args.batch_size, pred.shape[1])).float()
-            print("pred", pred.shape)
-            print("post-targets", targets)
+            t = torch.zeros(pred.shape)
+            for i in range(0, len(targets)):
+                t[:,i] = targets[i]
+            targets = t.float()
 
             loss = criterion(pred, targets)
-            print("******post-loss")
             loss.backward()
             optimizer.step()
-            train_loss += loss.data[0]
-            print("******post-step")
+            train_loss += loss.item()
 
             if idx % args.log_step == 0:
                 print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Perplexity: {:5.4f}'
-                      .format(epoch, args.num_epochs, i, total_step, loss.item(), np.exp(loss.item())))
+                      .format(epoch, args.num_epoch, idx, total_step, loss.item(), np.exp(loss.item())))
             # TODO: save on validation
-            if args.model_path is not None and (((i+1) % args.save_step == 0) or (i == total_step-1)): 
-                torch.save(model.state_dict(), os.path.join(args.model_path, 'model-{}-{}.ckpt'.format(epoch+1, i+1)))
+            if args.model_path is not None and (((idx+1) % args.save_step == 0) or (idx == total_step-1)): 
+                torch.save(model.state_dict(), os.path.join(args.model_path, 'bc_model-{}-{}.ckpt'.format(epoch+1, idx+1)))
         print('Train loss: -----epoch {}----- : {}'.format(epoch, train_loss))
 
 if __name__ == '__main__':
@@ -77,19 +73,19 @@ if __name__ == '__main__':
     # network-specific arguments
     parser.add_argument('--num_workers', default=4, type=int,
                   help='number of workers')
-    parser.add_argument('--batch_size', default=2, type=int,
+    parser.add_argument('--batch_size', default=32, type=int,
                   help='batch size')
     parser.add_argument('--num_epoch', default=20, type=int,
                   help='number of epochs')
     parser.add_argument('--learning_rate', default=0.0001, type=int,
                   help='learning rate')
-    parser.add_argument('--model_path', default=None, type=int,
+    parser.add_argument('--model_path', default='bc_model/', type=str,
                   help='save model location')
 
     # logging arguments
-    parser.add_argument('--log_step', default=1, type=int,
+    parser.add_argument('--log_step', default=20, type=int,
                   help='frequency to log')
-    parser.add_argument('--save_step', default=5, type=int,
+    parser.add_argument('--save_step', default=20, type=int,
                   help='frequency to save')
     args = parser.parse_args()
     main(args)
