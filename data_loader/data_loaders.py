@@ -14,9 +14,9 @@ from tools.find_correspondences import CorrespondenceFinder
 
 class RopeTrajectoryDataset(Dataset):
     """ Rope trajectory dataset """
-    def __init__(self, data_dir, network_dir, network, cfg_dir='../cfg', transform=None):
+    def __init__(self, data_dir, network_dir, network, cfg_dir='../cfg', transform=None, dataset_fraction=1):
         self.data_dir = data_dir
-        self.timestamps, self.depth_list, self.json_list, self.mask_list, self.npy_list = self.filter_trajectories() 
+        self.timestamps, self.depth_list, self.json_list, self.mask_list, self.npy_list = self.filter_trajectories(dataset_fraction) 
 
         # Path to network 
         network_path = os.path.join(network_dir, network)
@@ -49,7 +49,7 @@ class RopeTrajectoryDataset(Dataset):
     def __len__(self):
         return len(self.depth_list)
 
-    def filter_trajectories(self):
+    def filter_trajectories(self, dataset_fraction):
         # filter filenames that are incomplete trajectories
         files = os.listdir(os.path.join(self.data_dir, "json"))
 
@@ -76,7 +76,9 @@ class RopeTrajectoryDataset(Dataset):
                     npy_list.append(os.path.join(self.data_dir, "npy/", '{}_raw_depth_{}.npy'.format(ts, ob_idx)))
 
         print("dataset_size", len(depth_list))
-        return list(set(timestamps)), depth_list, json_list, mask_list, npy_list
+        dataset_size = round(len(depth_list) * dataset_fraction)
+
+        return list(set(timestamps))[:dataset_size], depth_list[:dataset_size], json_list[:dataset_size], mask_list[:dataset_size], npy_list[:dataset_size]
 
 
     def make_descriptors_images(self, image_path):

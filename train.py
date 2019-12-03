@@ -22,8 +22,18 @@ torch.backends.cudnn.benchmark = False
 np.random.seed(SEED)
 
 def main(args):
+    if args.training_set_size == "low":
+        dataset_fraction = 1/3.0
+    elif args.training_set_size == "medium":
+        dataset_fraction = 2/3.0
+    elif args.training_set_size == "high":
+        dataset_fraction = 1
+    else:
+        print("training_set_size specified is not one of (low, medium, high)... using all training data")
+        dataset_fraction = 1
+
     rope_dataset = RopeTrajectoryDataset(args.data_dir, args.network_dir, args.network, 
-                                         cfg_dir=args.config, transform=None)
+                                         cfg_dir=args.config, transform=None, dataset_fraction=dataset_fraction)
     val_dataset = RopeTrajectoryDataset(args.validation_dir, args.network_dir, args.network, 
                                          cfg_dir=args.config, transform=None)
     dataloader = DataLoader(rope_dataset, batch_size=args.batch_size, shuffle=True, 
@@ -98,7 +108,8 @@ if __name__ == '__main__':
                       help='directory to vis_descriptor network')
     parser.add_argument('--network', default='rope_noisy_1400_depth_norm_3', type=str,
                       help='filename of vis_descriptor network')
-
+    parser.add_argument('--training_set_size', default='high', type=str,
+                      help='size of training set (low, medium, or high)')
     # network-specific arguments
     parser.add_argument('--num_workers', default=4, type=int,
                   help='number of workers')
