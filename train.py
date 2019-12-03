@@ -24,8 +24,13 @@ np.random.seed(SEED)
 def main(args):
     rope_dataset = RopeTrajectoryDataset(args.data_dir, args.network_dir, args.network, 
                                          cfg_dir=args.config, transform=None, features=args.features)
+    val_dataset = RopeTrajectoryDataset(args.validation_dir, args.network_dir, args.network, 
+                                         cfg_dir=args.config, transform=None)
     dataloader = DataLoader(rope_dataset, batch_size=args.batch_size, shuffle=True, 
                             num_workers=args.num_workers)
+    val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True, 
+                                num_workers=args.num_workers)
+
     model = BasicModel()
     model = model.float()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
@@ -33,6 +38,7 @@ def main(args):
     
     total_step = len(dataloader)
     print("total step:", total_step)
+    best_validation_loss = None
     for epoch in range(args.num_epoch):
         model.train()
         train_loss = 0
@@ -53,19 +59,39 @@ def main(args):
             if idx % args.log_step == 0:
                 print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Perplexity: {:5.4f}'
                       .format(epoch, args.num_epoch, idx, total_step, loss.item(), np.exp(loss.item())))
-            # TODO: save on validation
-            if args.model_path is not None and (((idx+1) % args.save_step == 0) or (idx == total_step-1)):
-                save_path = os.path.join(args.model_path, args.features, 'bc_model-{}-{}.ckpt'.format(epoch+1, idx+1))
-                torch.save(model.state_dict(), save_path)
-        print('Train loss: -----epoch {}----- : {}'.format(epoch, train_loss))
+
+            if args.model_path is not None and (((idx+1) % args.save_step == 0) or (idx == total_step-1)): 
+                validation_loss = 0
+                for idx, (obs, targets) in enumerate(val_dataloader):
+                    pred = model(obs.float())
+                    t = torch.zeros(pred.shape)
+                    for i in range(0, len(targets)):
+                        t[:,i] = targets[i]
+                    targets = t.float()
+                    loss = criterion(pred, targets)
+                    validation_loss += loss.item()
+
+                if best_validation_loss is None or validation_loss < best_validation_loss:
+                    print("Validation Loss at epoch {} and step {}: {}... Previous Best Validation Loss: {}... saving model".format(epoch,
+                                                                                                                                    idx.
+                                                                                                                                    validation_loss,
+                                                                                                                                    best_validation_loss,
+                                                                                                                                    ))
+                    save_path = os.path.join(args.model_path, args.features, 'bc_model-{}-{}.ckpt'.format(epoch+1, idx+1))
+                    torch.save(model.state_dict(), save_path)
+                    best_validation_loss = validation_loss     
+        print('Train loss: -----epoch {}----- : {}'.format(epoch, train_loss))    
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch Template')
     # vis-descriptor specific file paths
     parser.add_argument('--config', default='cfg', type=str,
                       help='path to config')
-    parser.add_argument('--data_dir', default='data/', type=str,
-                      help='directory to data')
+    parser.add_argument('--data_dir', default='data/train/', type=str,
+                      help='directory to training data')
+    parser.add_argument('--val_dir', default='data/val/', type=str,
+                      help='directory to validation data')
     parser.add_argument('--network_dir', default='/nfs/diskstation/priya/rope_networks/', type=str,
                       help='directory to vis_descriptor network')
     parser.add_argument('--network', default='rope_noisy_1400_depth_norm_3', type=str,
