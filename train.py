@@ -23,7 +23,7 @@ np.random.seed(SEED)
 
 def main(args):
     rope_dataset = RopeTrajectoryDataset(args.data_dir, args.network_dir, args.network, 
-                                         cfg_dir=args.config, transform=None)
+                                         cfg_dir=args.config, transform=None, features=args.features)
     dataloader = DataLoader(rope_dataset, batch_size=args.batch_size, shuffle=True, 
                             num_workers=args.num_workers)
     model = BasicModel()
@@ -54,8 +54,9 @@ def main(args):
                 print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Perplexity: {:5.4f}'
                       .format(epoch, args.num_epoch, idx, total_step, loss.item(), np.exp(loss.item())))
             # TODO: save on validation
-            if args.model_path is not None and (((idx+1) % args.save_step == 0) or (idx == total_step-1)): 
-                torch.save(model.state_dict(), os.path.join(args.model_path, 'bc_model-{}-{}.ckpt'.format(epoch+1, idx+1)))
+            if args.model_path is not None and (((idx+1) % args.save_step == 0) or (idx == total_step-1)):
+                save_path = os.path.join(args.model_path, args.features, 'bc_model-{}-{}.ckpt'.format(epoch+1, idx+1))
+                torch.save(model.state_dict(), save_path)
         print('Train loss: -----epoch {}----- : {}'.format(epoch, train_loss))
 
 if __name__ == '__main__':
@@ -87,5 +88,9 @@ if __name__ == '__main__':
                   help='frequency to log')
     parser.add_argument('--save_step', default=20, type=int,
                   help='frequency to save')
+    
+    # training specific arguments
+    parser.add_argument('--features', default='priya', type=str,
+                      help='what feature type goes into the pipeline')
     args = parser.parse_args()
     main(args)

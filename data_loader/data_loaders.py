@@ -14,7 +14,7 @@ from tools.find_correspondences import CorrespondenceFinder
 
 class RopeTrajectoryDataset(Dataset):
     """ Rope trajectory dataset """
-    def __init__(self, data_dir, network_dir, network, cfg_dir='../cfg', transform=None):
+    def __init__(self, data_dir, network_dir, network, cfg_dir='../cfg', transform=None, features='priya'):
         self.data_dir = data_dir
         self.timestamps, self.depth_list, self.json_list, self.mask_list, self.npy_list = self.filter_trajectories() 
 
@@ -27,15 +27,21 @@ class RopeTrajectoryDataset(Dataset):
         dataset_mean, dataset_std_dev = dataset_stats["mean"], dataset_stats["std_dev"]
         self.cf = CorrespondenceFinder(self.dcn, dataset_mean, dataset_std_dev)
         self.descriptor_stats_config = os.path.join(network_path, 'descriptor_statistics.yaml')
-
+        self.features = features
 
     def __getitem__(self, idx):
         depth_path = self.depth_list[idx]
         json_path = self.json_list[idx]
         mask_path = self.mask_list[idx]
         npy_path = self.npy_list[idx]
+        
+        if self.features is 'priya':
+            desc_image = self.make_descriptors_images(depth_path)
+        else:
+            desc_image = Image.open(depth_path).convert('RGB')
+            desc_image = self.cf.rgb_image_to_tensor(desc_image)
+            desc_image = self.normalize_descriptor(desc_image)
 
-        desc_image = self.make_descriptors_images(depth_path)
         actions = []
         with open(json_path) as f:
             js = json.load(f)

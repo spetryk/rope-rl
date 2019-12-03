@@ -42,9 +42,7 @@ class BasicModel(nn.Module):
     def forward(self, input):
         input = input.view(input.size(0), 772, 1032, 3)
         input = input.permute(0, 3, 1, 2)
-        print("input", input.shape)
         output = self.conv_layers(input)
         output = output.view(output.size(0), -1)
-        print("output", output.shape)
         output = self.linear_layers(output)
         return output    
