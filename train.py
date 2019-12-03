@@ -28,7 +28,7 @@ def main(args):
                                          cfg_dir=args.config, transform=None)
     dataloader = DataLoader(rope_dataset, batch_size=args.batch_size, shuffle=True, 
                             num_workers=args.num_workers)
-    val_dataloader = DataLoader(rope_dataset, batch_size=args.batch_size, shuffle=True, 
+    val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True, 
                                 num_workers=args.num_workers)
 
     model = BasicModel()
@@ -81,9 +81,7 @@ def main(args):
                                                                                                                                     ))
                     torch.save(model.state_dict(), os.path.join(args.model_path, 'bc_model-{}-{}.ckpt'.format(epoch+1, idx+1)))
                     best_validation_loss = validation_loss     
-        print('Train loss: -----epoch {}----- : {}'.format(epoch, train_loss))
-        print('Validation loss: -----epoch {}----- : {}'.format(epoch, validation_loss))
-    
+        print('Train loss: -----epoch {}----- : {}'.format(epoch, train_loss))    
 
 
 
