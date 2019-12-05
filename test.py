@@ -1,81 +1,72 @@
 import argparse
+import collections
 import torch
-from tqdm import tqdm
-import data_loader.data_loaders as module_data
-import model.loss as module_loss
-import model.metric as module_metric
-import model.model as module_arch
-from parse_config import ConfigParser
+import numpy as np
+import os
 
+from behavioral_cloning.data_loader.data_loaders import RopeTrajectoryDataset
+from behavioral_cloning.model.model import BasicModel
 
-def main(config):
-    logger = config.get_logger('test')
+import torch
+import torch.nn as nn
+import torch.nn.init as init
+from torch.autograd import Variable
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader
 
-    # setup data_loader instances
-    data_loader = getattr(module_data, config['data_loader']['type'])(
-        config['data_loader']['args']['data_dir'],
-        batch_size=512,
-        shuffle=False,
-        validation_split=0.0,
-        training=False,
-        num_workers=2
-    )
+def main(args):
+    test_dataset_none = RopeTrajectoryDataset(args.test_dir, args.network_dir, args.network, 
+                                         cfg_dir=args.config, transform=None, features='none')
+    test_dataloader_none = DataLoader(test_dataset_none, batch_size=1, shuffle=False, num_workers=args.num_workers)
 
-    # build model architecture
-    model = config.init_obj('arch', module_arch)
-    logger.info(model)
+    test_dataset_priya = RopeTrajectoryDataset(args.test_dir, args.network_dir, args.network, 
+                                         cfg_dir=args.config, transform=None, features='priya')
+    test_dataloader_priya = DataLoader(test_dataset_priya, batch_size=1, shuffle=False, num_workers=args.num_workers)
 
-    # get function handles of loss and metrics
-    loss_fn = getattr(module_loss, config['loss'])
-    metric_fns = [getattr(module_metric, met) for met in config['metrics']]
+    model_paths = []
+    for size in ['high', 'med', 'low']:
+        info = []
+        for feat in ['none', 'priya']:
+            mdir = os.path.join(args.model_dir, size, feat)
+            best_model = os.path.join(mdir, os.listdir(mdir).sort()[-1])
+            print('...processing: {}'.format(best_model))
+            if feat is 'none':
+                info.append(eval_model(test_dataloader_none, best_model))
+            else:
+                info.append(eval_model(test_dataloader_priya, best_model))
+        print('priya: {}'.format(info[0]))
+        print('none-s: {}'.format(info[1]))
 
-    logger.info('Loading checkpoint: {} ...'.format(config.resume))
-    checkpoint = torch.load(config.resume)
-    state_dict = checkpoint['state_dict']
-    if config['n_gpu'] > 1:
-        model = torch.nn.DataParallel(model)
-    model.load_state_dict(state_dict)
-
-    # prepare model for testing
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = model.to(device)
+def eval_model(dataloader, model_path):
+    model = BasicModel().float()
+    model.load_state_dict(torch.load(model_path))
     model.eval()
-
-    total_loss = 0.0
-    total_metrics = torch.zeros(len(metric_fns))
-
-    with torch.no_grad():
-        for i, (data, target) in enumerate(tqdm(data_loader)):
-            data, target = data.to(device), target.to(device)
-            output = model(data)
-
-            #
-            # save sample images, or do something with output here
-            #
-
-            # computing loss, metrics on test set
-            loss = loss_fn(output, target)
-            batch_size = data.shape[0]
-            total_loss += loss.item() * batch_size
-            for i, metric in enumerate(metric_fns):
-                total_metrics[i] += metric(output, target) * batch_size
-
-    n_samples = len(data_loader.sampler)
-    log = {'loss': total_loss / n_samples}
-    log.update({
-        met.__name__: total_metrics[i].item() / n_samples for i, met in enumerate(metric_fns)
-    })
-    logger.info(log)
-
+    criterion = nn.MSELoss()
+    test_loss = []
+    for idx, (obs, targets) in enumerate(dataloader):
+        pred = model(obs.float())
+        t = torch.zeros(pred.shape)
+        for i in range(0, len(targets)):
+            t[:,i] = targets[i]
+        targets = t.float()
+        loss = criterion(pred, targets)
+        test_loss.append(loss.item())
+    return (np.sum(test_loss), np.mean(test_loss), np.std(test_loss))
 
 if __name__ == '__main__':
-    args = argparse.ArgumentParser(description='PyTorch Template')
-    args.add_argument('-c', '--config', default=None, type=str,
-                      help='config file path (default: None)')
-    args.add_argument('-r', '--resume', default=None, type=str,
-                      help='path to latest checkpoint (default: None)')
-    args.add_argument('-d', '--device', default=None, type=str,
-                      help='indices of GPUs to enable (default: all)')
-
-    config = ConfigParser.from_args(args)
-    main(config)
+    parser = argparse.ArgumentParser(description='PyTorch Template')
+    # vis-descriptor specific file paths
+    parser.add_argument('--config', default='cfg', type=str,
+                      help='path to config')
+    parser.add_argument('--test_dir', default='data/val/', type=str,
+                      help='directory to validation data')
+    parser.add_argument('--network_dir', default='/nfs/diskstation/priya/rope_networks/', type=str,
+                      help='directory to vis_descriptor network')
+    parser.add_argument('--network', default='rope_noisy_1400_depth_norm_3', type=str,
+                      help='filename of vis_descriptor network')
+    
+    # training specific arguments
+    parser.add_argument('--model_dir', default='bc_model/', type=str,
+                      help='path to the pretrained model')
+    args = parser.parse_args()
+    main(args)
