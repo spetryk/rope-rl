@@ -27,7 +27,7 @@ def main(args):
     for size in ['high', 'med', 'low']:
         info = []
         for feat in ['none', 'priya']:
-            mdir = os.path.join(args.model_dir, size, feat)
+            mdir = os.path.join(args.model_dir, feat, size)
             best_model = os.path.join(mdir, os.listdir(mdir).sort()[-1])
             print('...processing: {}'.format(best_model))
             if feat is 'none':
