@@ -17,11 +17,11 @@ from torch.utils.data import Dataset, DataLoader
 def main(args):
     test_dataset_none = RopeTrajectoryDataset(args.test_dir, args.network_dir, args.network, 
                                          cfg_dir=args.config, transform=None, features='none')
-    test_dataloader_none = DataLoader(test_dataset_none, batch_size=1, shuffle=False, num_workers=args.num_workers)
+    test_dataloader_none = DataLoader(test_dataset_none, batch_size=1, shuffle=False)
 
     test_dataset_priya = RopeTrajectoryDataset(args.test_dir, args.network_dir, args.network, 
                                          cfg_dir=args.config, transform=None, features='priya')
-    test_dataloader_priya = DataLoader(test_dataset_priya, batch_size=1, shuffle=False, num_workers=args.num_workers)
+    test_dataloader_priya = DataLoader(test_dataset_priya, batch_size=1, shuffle=False)
 
     model_paths = []
     for size in ['high', 'med', 'low']:
