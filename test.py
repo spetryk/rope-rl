@@ -14,6 +14,8 @@ from torch.autograd import Variable
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 
+import matplotlib.pyplot as plt
+
 def main(args):
     test_dataset_none = RopeTrajectoryDataset(args.test_dir, args.network_dir, args.network, 
                                          cfg_dir=args.config, transform=None, features='none')
@@ -53,6 +55,17 @@ def eval_model(dataloader, model_path):
         targets = t.float()
         loss = criterion(pred, targets)
         test_loss.append(loss.item())
+        
+        # Save the image outputs
+        im = plt.imread(obs)
+        implot = plt.imshow(im);
+        plt.scatter([targets[0]], [targets[1]], c='r', marker='o') # grasp [target]
+        plt.scatter([targets[3]], [targets[4]], c='r', marker='x') # drop [target]
+        plt.scatter([pred[0]], [pred[1]], c='b', marker='o') # grasp [pred]
+        plt.scatter([pred[3]], [pred[4]], c='b', marker='x') # drop [pred]
+        plt.savefig('test.png')
+        assert false
+
     return (np.sum(test_loss), np.mean(test_loss), np.std(test_loss))
 
 if __name__ == '__main__':
@@ -66,6 +79,8 @@ if __name__ == '__main__':
                       help='directory to vis_descriptor network')
     parser.add_argument('--network', default='rope_noisy_1400_depth_norm_3', type=str,
                       help='filename of vis_descriptor network')
+    parser.add_argument('--save_dir', default='visualizations/test/', type=str,
+                      help='directory to validation data')
     
     # training specific arguments
     parser.add_argument('--model_dir', default='bc_model/', type=str,
