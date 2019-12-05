@@ -80,7 +80,7 @@ def main(args):
             # TODO: split into training and validation sets if dataset is big enough....
             model.train()
             optimizer.zero_grad()
-            obs = obs.float()
+            obs = obs.float().cuda()
             obs.to(device)
 
             pred = model(obs)
