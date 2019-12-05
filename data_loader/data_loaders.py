@@ -14,11 +14,7 @@ from tools.find_correspondences import CorrespondenceFinder
 
 class RopeTrajectoryDataset(Dataset):
     """ Rope trajectory dataset """
-<<<<<<< HEAD
-    def __init__(self, data_dir, network_dir, network, cfg_dir='../cfg', transform=None, dataset_fraction=1):
-=======
-    def __init__(self, data_dir, network_dir, network, cfg_dir='../cfg', transform=None, features='priya'):
->>>>>>> a8d867f1d02d8e03ce98ca46a41cc7aef3a4eb78
+    def __init__(self, data_dir, network_dir, network, cfg_dir='../cfg', transform=None, features='priya',  dataset_fraction=1):
         self.data_dir = data_dir
         self.timestamps, self.depth_list, self.json_list, self.mask_list, self.npy_list = self.filter_trajectories(dataset_fraction) 
 
@@ -86,7 +82,7 @@ class RopeTrajectoryDataset(Dataset):
                     npy_list.append(os.path.join(self.data_dir, "npy/", '{}_raw_depth_{}.npy'.format(ts, ob_idx)))
 
         print("dataset_size", len(depth_list))
-        dataset_size = round(len(depth_list) * dataset_fraction)
+        dataset_size = int(round(len(depth_list) * dataset_fraction))
 
         return list(set(timestamps))[:dataset_size], depth_list[:dataset_size], json_list[:dataset_size], mask_list[:dataset_size], npy_list[:dataset_size]
 
