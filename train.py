@@ -51,7 +51,12 @@ def main(args):
     model = model.float()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     criterion = nn.MSELoss()
-    
+
+    if args.weights is not None:
+        # Load in weights to resume training
+        model.load_state_dict(torch.load(args.weights))
+
+
     total_step = len(dataloader)
     print("total step:", total_step)
     best_validation_loss = None
@@ -101,7 +106,7 @@ def main(args):
                     save_path = os.path.join(args.model_path, args.features, args.training_set_size, 'bc_model-{}-{}.ckpt'.format(epoch+1, idx+1))
                     torch.save(model.state_dict(), save_path)
                     best_validation_loss = validation_loss     
-            
+
         writer.add_scalar('Loss/train', train_loss, train_counter)
         train_counter += 1
         print('Train loss: -----epoch {}----- : {}'.format(epoch, train_loss))    
@@ -145,5 +150,9 @@ if __name__ == '__main__':
                       help='what feature type goes into the pipeline')
     parser.add_argument('--training_set_size', default='high', type=str,
                       help='size of training set (low, med, or high)')
+    parser.add_argument('--weights', default=None, type=str,
+                        help='path to weights file to resume training from. \
+                        None if start from scratch')
+
     args = parser.parse_args()
     main(args)
