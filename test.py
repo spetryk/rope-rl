@@ -17,25 +17,27 @@ from torch.utils.data import Dataset, DataLoader
 def main(args):
     test_dataset_none = RopeTrajectoryDataset(args.test_dir, args.network_dir, args.network, 
                                          cfg_dir=args.config, transform=None, features='none')
-    test_dataloader_none = DataLoader(test_dataset_none, batch_size=1, shuffle=False)
+    test_dataloader_none = DataLoader(test_dataset_none, batch_size=32, shuffle=False)
 
     test_dataset_priya = RopeTrajectoryDataset(args.test_dir, args.network_dir, args.network, 
                                          cfg_dir=args.config, transform=None, features='priya')
-    test_dataloader_priya = DataLoader(test_dataset_priya, batch_size=1, shuffle=False)
+    test_dataloader_priya = DataLoader(test_dataset_priya, batch_size=32, shuffle=False)
 
     model_paths = []
     for size in ['high', 'med', 'low']:
         info = []
         for feat in ['none', 'priya']:
             mdir = os.path.join(args.model_dir, feat, size)
-            best_model = os.path.join(mdir, os.listdir(mdir).sort()[-1])
+            files = os.listdir(mdir)
+            files.sort(key=lambda f: int(filter(str.isdigit, f)))
+            best_model = os.path.join(mdir, files[-1])
             print('...processing: {}'.format(best_model))
             if feat is 'none':
                 info.append(eval_model(test_dataloader_none, best_model))
             else:
                 info.append(eval_model(test_dataloader_priya, best_model))
         print('priya: {}'.format(info[0]))
-        print('none-s: {}'.format(info[1]))
+        print('none-: {}'.format(info[1]))
 
 def eval_model(dataloader, model_path):
     model = BasicModel().float()
