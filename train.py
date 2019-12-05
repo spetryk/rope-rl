@@ -87,7 +87,7 @@ def main(args):
             t = torch.zeros(pred.shape)
             for i in range(0, len(targets)):
                 t[:,i] = targets[i]
-            targets = t.float()
+            targets = t.float().cuda()
             targets.to(device)
 
             loss = criterion(pred, targets)
