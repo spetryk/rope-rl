@@ -58,7 +58,7 @@ def main(args):
                                 num_workers=args.num_workers)
 
     model = BasicModel()
-    model = model.float()
+    model = model.float().cuda()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     criterion = nn.MSELoss()
 
@@ -80,17 +80,17 @@ def main(args):
             # TODO: split into training and validation sets if dataset is big enough....
             model.train()
             optimizer.zero_grad()
-            obs = obs.float().cuda()
+            obs = obs.float()
             obs.to(device)
 
-            pred = model(obs)
+            pred = model(obs.cuda())
             t = torch.zeros(pred.shape)
             for i in range(0, len(targets)):
                 t[:,i] = targets[i]
-            targets = t.float().cuda()
+            targets = t.float()
             targets.to(device)
 
-            loss = criterion(pred, targets)
+            loss = criterion(pred, targets.cuda())
             loss.backward()
             optimizer.step()
             train_loss += loss.item()
@@ -105,13 +105,13 @@ def main(args):
                 for idx, (obs, targets) in enumerate(val_dataloader):
                     obs = obs.float()
                     obs.to(device)
-                    pred = model(obs)
+                    pred = model(obs.cuda())
                     t = torch.zeros(pred.shape)
                     for i in range(0, len(targets)):
                         t[:,i] = targets[i]
                     targets = t.float()
                     targets.to(device)
-                    loss = criterion(pred, targets)
+                    loss = criterion(pred, targets.cuda())
                     validation_loss += loss.item()
                 writer.add_scalar('Loss/validation', validation_loss, validation_counter)
                 validation_counter += 1
