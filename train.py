@@ -22,6 +22,16 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 np.random.seed(SEED)
 
+def get_device(cuda):
+    cuda = cuda and torch.cuda.is_available()
+    device = torch.device("cuda" if cuda else "cpu")
+    if cuda:
+        current_device = torch.cuda.current_device()
+        print("Device:", torch.cuda.get_device_name(current_device))
+    else:
+        print("Device: CPU")
+    return device
+
 
 def main(args):
     
@@ -51,7 +61,14 @@ def main(args):
     model = model.float()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     criterion = nn.MSELoss()
-    
+
+    if args.weights is not None:
+        # Load in weights to resume training
+        model.load_state_dict(torch.load(args.weights))
+
+    device = get_device(args.cuda)
+    model.to(device)
+
     total_step = len(dataloader)
     print("total step:", total_step)
     best_validation_loss = None
@@ -63,11 +80,15 @@ def main(args):
             # TODO: split into training and validation sets if dataset is big enough....
             model.train()
             optimizer.zero_grad()
-            pred = model(obs.float())
+            obs = obs.float()
+            obs.to(device)
+
+            pred = model(obs)
             t = torch.zeros(pred.shape)
             for i in range(0, len(targets)):
                 t[:,i] = targets[i]
             targets = t.float()
+            targets.to(device)
 
             loss = criterion(pred, targets)
             loss.backward()
@@ -82,11 +103,14 @@ def main(args):
                 model.eval()
                 validation_loss = 0
                 for idx, (obs, targets) in enumerate(val_dataloader):
-                    pred = model(obs.float())
+                    obs = obs.float()
+                    obs.to(device)
+                    pred = model(obs)
                     t = torch.zeros(pred.shape)
                     for i in range(0, len(targets)):
                         t[:,i] = targets[i]
                     targets = t.float()
+                    targets.to(device)
                     loss = criterion(pred, targets)
                     validation_loss += loss.item()
                 writer.add_scalar('Loss/validation', validation_loss, validation_counter)
@@ -101,7 +125,7 @@ def main(args):
                     save_path = os.path.join(args.model_path, args.features, args.training_set_size, 'bc_model-{}-{}.ckpt'.format(epoch+1, idx+1))
                     torch.save(model.state_dict(), save_path)
                     best_validation_loss = validation_loss     
-            
+
         writer.add_scalar('Loss/train', train_loss, train_counter)
         train_counter += 1
         print('Train loss: -----epoch {}----- : {}'.format(epoch, train_loss))    
@@ -145,5 +169,11 @@ if __name__ == '__main__':
                       help='what feature type goes into the pipeline')
     parser.add_argument('--training_set_size', default='high', type=str,
                       help='size of training set (low, med, or high)')
+    parser.add_argument('--weights', default=None, type=str,
+                        help='path to weights file to resume training from. \
+                        None if start from scratch')
+    parser.add_argument('--cuda', action='store_true',
+                        help='use this flag to run on GPU')
+
     args = parser.parse_args()
     main(args)
