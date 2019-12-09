@@ -18,11 +18,11 @@ import matplotlib.pyplot as plt
 
 def main(args):
     test_dataset_none = RopeTrajectoryDataset(args.test_dir, args.network_dir, args.network, 
-                                         cfg_dir=args.config, transform=None, features='none')
+                                         cfg_dir=args.config, transform=None, features='none', save_im=True, dataset_fraction=1/3.0)
     test_dataloader_none = DataLoader(test_dataset_none, batch_size=32, shuffle=False)
 
     test_dataset_priya = RopeTrajectoryDataset(args.test_dir, args.network_dir, args.network, 
-                                         cfg_dir=args.config, transform=None, features='priya')
+                                         cfg_dir=args.config, transform=None, features='priya', save_im=True, dataset_fraction=1/3.0)
     test_dataloader_priya = DataLoader(test_dataset_priya, batch_size=32, shuffle=False)
 
     model_paths = []
@@ -35,19 +35,19 @@ def main(args):
             best_model = os.path.join(mdir, files[-1])
             print('...processing: {}'.format(best_model))
             if feat is 'none':
-                info.append(eval_model(test_dataloader_none, best_model))
+                info.append(eval_model(test_dataloader_none, best_model, feat))
             else:
-                info.append(eval_model(test_dataloader_priya, best_model))
+                info.append(eval_model(test_dataloader_priya, best_model, feat))
         print('priya: {}'.format(info[0]))
         print('none-: {}'.format(info[1]))
 
-def eval_model(dataloader, model_path):
+def eval_model(dataloader, model_path, feat):
     model = BasicModel().float()
     model.load_state_dict(torch.load(model_path))
     model.eval()
     criterion = nn.MSELoss()
     test_loss = []
-    for idx, (obs, targets) in enumerate(dataloader):
+    for idx, (obs, targets, filenames) in enumerate(dataloader):
         pred = model(obs.float())
         t = torch.zeros(pred.shape)
         for i in range(0, len(targets)):
@@ -57,14 +57,14 @@ def eval_model(dataloader, model_path):
         test_loss.append(loss.item())
         
         # Save the image outputs
-        im = plt.imread(obs)
-        implot = plt.imshow(im);
-        plt.scatter([targets[0]], [targets[1]], c='r', marker='o') # grasp [target]
-        plt.scatter([targets[3]], [targets[4]], c='r', marker='x') # drop [target]
-        plt.scatter([pred[0]], [pred[1]], c='b', marker='o') # grasp [pred]
-        plt.scatter([pred[3]], [pred[4]], c='b', marker='x') # drop [pred]
-        plt.savefig('test.png')
-        assert false
+        for t, p, f in zip(targets, pred, filenames):
+            plt.scatter([t[0].item()], [t[1].item()], c='r', marker='o') # grasp [target]
+            plt.scatter([t[3].item()], [t[4].item()], c='r', marker='x') # drop [target]
+            plt.scatter([p[0].item()], [p[1].item()], c='b', marker='o') # grasp [pred]
+            plt.scatter([p[3].item()], [p[4].item()], c='b', marker='x') # drop [pred]
+            fn, ext = os.path.splitext(f)
+            plt.savefig('{}_points.png'.format(fn))
+            print('saving plot to:', '{}_points.png'.format(fn))
 
     return (np.sum(test_loss), np.mean(test_loss), np.std(test_loss))
 

@@ -6,6 +6,7 @@ import re
 import cv2
 import json
 import yaml
+import matplotlib.pyplot as plt
 
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
@@ -14,7 +15,7 @@ from tools.find_correspondences import CorrespondenceFinder
 
 class RopeTrajectoryDataset(Dataset):
     """ Rope trajectory dataset """
-    def __init__(self, data_dir, network_dir, network, cfg_dir='../cfg', transform=None, features='priya',  dataset_fraction=1):
+    def __init__(self, data_dir, network_dir, network, cfg_dir='../cfg', transform=None, features='priya',  dataset_fraction=1, save_im=False):
         self.data_dir = data_dir
         self.timestamps, self.depth_list, self.json_list, self.mask_list, self.npy_list = self.filter_trajectories(dataset_fraction) 
 
@@ -28,20 +29,33 @@ class RopeTrajectoryDataset(Dataset):
         self.cf = CorrespondenceFinder(self.dcn, dataset_mean, dataset_std_dev)
         self.descriptor_stats_config = os.path.join(network_path, 'descriptor_statistics.yaml')
         self.features = features
+        self.save_im = save_im
 
     def __getitem__(self, idx):
         depth_path = self.depth_list[idx]
         json_path = self.json_list[idx]
         mask_path = self.mask_list[idx]
         npy_path = self.npy_list[idx]
-        
+
+        save_file_name = ''
+
         if self.features is 'priya':
             desc_image = self.make_descriptors_images(depth_path)
+            if self.save_im:
+                save_file_name = os.path.join('data/res/', '{}_res_priya.png'.format(os.path.basename(depth_path)))
+                print('saving feat. to: {}', save_file_name)
+                plt.imsave(save_file_name, desc_image)
         else:
             desc_image = Image.open(depth_path).convert('RGB')
+            if self.save_im:
+                save_file_name = os.path.join('data/res/', '{}_res_none.png'.format(os.path.basename(depth_path)))
+                print('saving feat. to: {}', save_file_name)
+                plt.imsave(save_file_name, desc_image)
+                
             desc_image = self.cf.rgb_image_to_tensor(desc_image)
             desc_image = self.normalize_descriptor(desc_image)
-
+        
+        
         actions = []
         with open(json_path) as f:
             js = json.load(f)
@@ -50,7 +64,8 @@ class RopeTrajectoryDataset(Dataset):
             actions.append(np.array(js['orientation']))
 
         actions = np.hstack(actions)
-        return desc_image, list(actions)
+
+        return desc_image, list(actions), save_file_name
 
     def __len__(self):
         return len(self.depth_list)
@@ -58,7 +73,7 @@ class RopeTrajectoryDataset(Dataset):
     def filter_trajectories(self, dataset_fraction):
         # filter filenames that are incomplete trajectories
         files = os.listdir(os.path.join(self.data_dir, "json"))
-
+        print("data", self.data_dir, "dataset_fraction", dataset_fraction)
 	# extract timestamp
         exp = "(.+)_\d\.json"
         tags = [re.match(exp, f) for f in files]
@@ -99,6 +114,7 @@ class RopeTrajectoryDataset(Dataset):
         #descriptor_image_stats = yaml.load(file(descriptor_stats_config), Loader=CLoader)
         descriptor_image_stats = yaml.load(file(self.descriptor_stats_config))
         res_a = self.normalize_descriptor(res_a, descriptor_image_stats["mask_image"])
+        print("make_descriptors", self.save_im)
         return res_a
 
     def normalize_descriptor(self, res, stats=None):
