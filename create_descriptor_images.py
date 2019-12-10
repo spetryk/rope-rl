@@ -28,7 +28,7 @@ def main(args):
         depth_path = os.path.join(args.depth_image_dir, filename)
         name_parts = filename.split("_")
         name_parts[2] = "priya_descriptors"
-        output_filename = "".join(name_parts)
+        output_filename = "_".join(name_parts)
         output_path = os.path.join(args.descriptor_image_dir, output_filename)
         desc_image = make_descriptors_images(cf, depth_path, descriptor_stats_config)
         plt.imsave(output_path, desc_image)
