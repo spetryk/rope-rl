@@ -5,7 +5,7 @@ import numpy as np
 import os
 import json
 
-from behavioral_cloning.data_loader.data_loaders import RopeTrajectoryDataset
+from behavioral_cloning.data_loader.get_stats_dataloaders import RopeTrajectoryDataset
 from behavioral_cloning.model.model import BasicModel
 
 import torch
@@ -25,11 +25,11 @@ def main(args):
     js = {}
     for idx, (obs, _, _) in enumerate(dataloader):
         mean = obs.mean()
-        print(mean.shape)
+        print(mean)
         std = obs.std()
-        print(std.shape)
-        js['mean'] = mean
-        js['std'] = std
+        print(std)
+        js['mean'] = mean.item()
+        js['std'] = std.item()
     with open(args.save_file, 'w') as outfile:
         json.dump(js, outfile)
 

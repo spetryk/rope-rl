@@ -45,6 +45,11 @@ class RopeTrajectoryDataset(Dataset):
             image = self.make_descriptors_images(depth_path)
         else:
             image = Image.open(depth_path).convert('RGB')
+            transform = transforms.Compose([
+                transforms.Resize((224, 224)),
+                transforms.ToTensor()
+            ])
+            image = image.transform(image)
 
         return image
 
