@@ -81,7 +81,7 @@ if __name__ == '__main__':
     parser.add_argument('--depth_image_dir', default='data/train/depth', type=str,
                       help='directory to training data')
     
-    parser.add_argument('--descriptor_image_dir', type=str,
+    parser.add_argument('--descriptor_image_dir',  default='data/train/descriptor_images', type=str,
                       help='directory to output descriptor images into')
     
     parser.add_argument('--network_dir', default='/nfs/diskstation/priya/rope_networks/', type=str,
