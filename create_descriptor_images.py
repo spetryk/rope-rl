@@ -18,7 +18,7 @@ def main(args):
     network_path = os.path.join(args.network_dir, args.network)
     dcn = DenseCorrespondenceNetwork.from_model_folder(network_path, model_param_file=os.path.join(network_path, '003501.pth'))
     dcn.eval()
-    with open(os.path.join(args.cfg, 'dataset_info.json'), 'r') as f:
+    with open(os.path.join(args.config, 'dataset_info.json'), 'r') as f:
         dataset_stats = json.load(f)
     dataset_mean, dataset_std_dev = dataset_stats["mean"], dataset_stats["std_dev"]
     cf = CorrespondenceFinder(dcn, dataset_mean, dataset_std_dev)
@@ -47,10 +47,9 @@ def make_descriptors_images(cf, image_path, descriptor_stats_config):
     #descriptor_image_stats = yaml.load(file(descriptor_stats_config), Loader=CLoader)
     descriptor_image_stats = yaml.load(file(descriptor_stats_config))
     res_a = normalize_descriptor(res_a, descriptor_image_stats["mask_image"])
-    print("make_descriptors", save_im)
     return res_a
 
-def normalize_descriptor(self, res, stats=None):
+def normalize_descriptor(res, stats=None):
     """
     Normalizes the descriptor into RGB color space
     :param res: numpy.array [H,W,D]
@@ -79,7 +78,7 @@ if __name__ == '__main__':
     parser.add_argument('--config', default='cfg', type=str,
                       help='path to config')
 
-    parser.add_argument('--depth_image_dir', default='data/train/', type=str,
+    parser.add_argument('--depth_image_dir', default='data/train/depth', type=str,
                       help='directory to training data')
     
     parser.add_argument('--descriptor_image_dir', type=str,
@@ -91,8 +90,6 @@ if __name__ == '__main__':
     parser.add_argument('--network', default='rope_noisy_1400_depth_norm_3', type=str,
                       help='filename of vis_descriptor network')
     
-    parser.add_argument('--cuda', action='store_true',
-                        help='use this flag to run on GPU')
 
     args = parser.parse_args()
     main(args)
