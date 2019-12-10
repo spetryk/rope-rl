@@ -103,7 +103,7 @@ def main(args):
     validation_counter = 0
     for epoch in range(args.num_epoch):
         train_loss = 0
-        for idx, (obs, targets) in enumerate(dataloader):
+        for idx, (obs, targets, _) in enumerate(dataloader):
             # TODO: split into training and validation sets if dataset is big enough....
             model.train()
             optimizer.zero_grad()
@@ -129,7 +129,7 @@ def main(args):
             if args.model_path is not None and (((idx+1) % args.save_step == 0) or (idx == total_step-1)): 
                 model.eval()
                 validation_loss = 0
-                for idx, (obs, targets) in enumerate(val_dataloader):
+                for idx, (obs, targets, _) in enumerate(val_dataloader):
                     obs = obs.float()
                     obs.to(device)
                     pred = model(obs.cuda())
