@@ -184,7 +184,7 @@ if __name__ == '__main__':
                   help='learning rate')
     parser.add_argument('--model_path', default='bc_model/', type=str,
                   help='save model location')
-    parser.add_argument('--pretrained', action=store_true, type=str,
+    parser.add_argument('--pretrained', action='store_true',
                     help='If using depth images, flag to use pretrained model')
 
     # logging arguments

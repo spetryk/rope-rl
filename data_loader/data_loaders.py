@@ -9,6 +9,7 @@ import yaml
 import matplotlib.pyplot as plt
 
 from PIL import Image
+import torch
 from torch.utils.data import Dataset, DataLoader
 from tools.dense_correspondence_network import DenseCorrespondenceNetwork
 from tools.find_correspondences import CorrespondenceFinder

@@ -4,6 +4,7 @@ import torch.nn.init as init
 from torch.autograd import Variable
 import torch.optim as optim
 from torch.utils.data import DataLoader
+import torchvision
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 from torchvision.utils import save_image
