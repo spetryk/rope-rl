@@ -64,6 +64,8 @@ def main(args):
         #stats = {'mean': [0.0331] * 3,
         #         'std_dev': [0.1305] * 3}
 
+    # before this transform, image needs to be PIL Image with values in between [0, 255]
+
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
