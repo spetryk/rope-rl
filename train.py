@@ -5,7 +5,7 @@ import numpy as np
 import os
 
 from behavioral_cloning.data_loader.data_loaders import RopeTrajectoryDataset
-from behavioral_cloning.model.model import BasicModel
+from behavioral_cloning.model.model import BasicModel, ResNet18
 
 import torch
 import torch.nn as nn
@@ -36,9 +36,12 @@ def get_device(cuda):
 
 
 def main(args):
-    
+
     writer = SummaryWriter(comment="_{}_{}".format(args.features, args.training_set_size))
-    
+
+    if not os.path.exists(args.model_path):
+        os.makedirs(args.model_path)
+
     if args.training_set_size == "low":
         dataset_fraction = 1/3.0
     elif args.training_set_size == "medium":
@@ -49,16 +52,20 @@ def main(args):
         print("training_set_size specified is not one of (low, medium, high)... using all training data")
         dataset_fraction = 1
 
-
     if args.pretrained:
-        # Use ImageNet stats
+        # Use ImageNet stats, for both feature desc and depth image networks
         stats = {'mean': [0.485, 0.456, 0.406],
                  'std_dev': [0.229, 0.224, 0.225]}
-    else:
+    elif args.features != 'priya':
+        # Using depth images and not pretrained: single channel input
         # Mean and std dev of depth image train dataset
         stats = {'mean': [0.0331],
                  'std_dev': [0.1305]}
-
+    else:
+        # Feature descriptors and not pretrained
+        raise Exception # find mean and std of feature train dataset
+        #stats = {'mean': [0.0331] * 3,
+        #         'std_dev': [0.1305] * 3}
 
     transform = transforms.Compose([
         transforms.ToPILImage(),
@@ -77,7 +84,7 @@ def main(args):
     val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True,
                                 num_workers=args.num_workers)
 
-    model = BasicModel()
+    model = ResNet18(args.pretrained, channels=len(stats['mean']))
     model = model.float().cuda()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     criterion = nn.MSELoss()
