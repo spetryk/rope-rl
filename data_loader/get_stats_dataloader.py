@@ -46,7 +46,6 @@ class RopeTrajectoryDataset(Dataset):
         return image
 
 
-
     def __len__(self):
         return len(self.depth_list)
 
@@ -92,25 +91,3 @@ class RopeTrajectoryDataset(Dataset):
         res_a = self.cf.dcn.forward_single_image_tensor(rgb_a_tensor).data.cpu().numpy()
 
         return res_a
-
-    def normalize_descriptor(self, res, stats=None):
-        """
-        Normalizes the descriptor into RGB color space
-        :param res: numpy.array [H,W,D]
-            Output of the network, per-pixel dense descriptor
-        :param stats: dict, with fields ['min', 'max', 'mean'], which are used to normalize descriptor
-        :return: numpy.array
-            normalized descriptor
-        """
-        if stats is None:
-            res_min = res.min()
-            res_max = res.max()
-        else:
-            res_min = np.array(stats['min'])
-            res_max = np.array(stats['max'])
-
-        normed_res = np.clip(res, res_min, res_max)
-        eps = 1e-10
-        scale = (res_max - res_min) + eps
-        normed_res = (normed_res - res_min) / scale
-        return normed_res
