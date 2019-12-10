@@ -41,7 +41,7 @@ class RopeTrajectoryDataset(Dataset):
         npy_path = self.npy_list[idx]
 
         save_file_name = ''
-
+        import pdb; pdb.set_trace()
         if self.features is 'priya':
             image = self.make_descriptors_images(depth_path)
             if self.save_im:
