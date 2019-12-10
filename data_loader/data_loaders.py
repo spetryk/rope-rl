@@ -57,11 +57,7 @@ class RopeTrajectoryDataset(Dataset):
             #image = self.cf.rgb_image_to_tensor(image)
             #desc_image = self.normalize_descriptor(desc_image)
 
-        # image must be PIL Image with values in range [0, 255]
-        assert(torch.max(transforms.ToTensor()(image)) <= 1.)
-        assert(torch.min(transforms.ToTensor()(image)) >= 0.)
-        #assert(type(image)==PIL.PngImagePlugin.PngImageFile)
-        print(image.shape)
+        # image must be PIL Image with uint8 values in range [0, 255]
         image = self.transform(image)
 
         actions = []
@@ -122,8 +118,8 @@ class RopeTrajectoryDataset(Dataset):
         descriptor_image_stats = yaml.load(file(self.descriptor_stats_config))
         res_a = self.normalize_descriptor(res_a, descriptor_image_stats["entire_image"]) # TODO: replace w/ updated stats
 
-        # Convert to range [0,255]
-        res_a = res_a * 255.
+        # Convert to range [0,255] and float32
+        res_a = (res_a * 255.).astype(np.uint8)
 
         # Convert to PIL Image
         res_a =  transforms.ToPILImage()(res_a)
