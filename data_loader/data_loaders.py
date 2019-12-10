@@ -43,13 +43,13 @@ class RopeTrajectoryDataset(Dataset):
             desc_image = self.make_descriptors_images(depth_path)
             if self.save_im:
                 save_file_name = os.path.join('data/res/', '{}_res_priya.png'.format(os.path.basename(depth_path)))
-                print('saving feat. to: {}', save_file_name)
+                #print('saving feat. to: {}', save_file_name)
                 plt.imsave(save_file_name, desc_image)
         else:
             desc_image = Image.open(depth_path).convert('RGB')
             if self.save_im:
                 save_file_name = os.path.join('data/res/', '{}_res_none.png'.format(os.path.basename(depth_path)))
-                print('saving feat. to: {}', save_file_name)
+                #print('saving feat. to: {}', save_file_name)
                 plt.imsave(save_file_name, desc_image)
                 
             desc_image = self.cf.rgb_image_to_tensor(desc_image)
@@ -114,7 +114,6 @@ class RopeTrajectoryDataset(Dataset):
         #descriptor_image_stats = yaml.load(file(descriptor_stats_config), Loader=CLoader)
         descriptor_image_stats = yaml.load(file(self.descriptor_stats_config))
         res_a = self.normalize_descriptor(res_a, descriptor_image_stats["mask_image"])
-        print("make_descriptors", self.save_im)
         return res_a
 
     def normalize_descriptor(self, res, stats=None):

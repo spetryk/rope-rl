@@ -76,7 +76,7 @@ def main(args):
     validation_counter = 0
     for epoch in range(args.num_epoch):
         train_loss = 0
-        for idx, (obs, targets) in enumerate(dataloader):
+        for idx, (obs, targets, _) in enumerate(dataloader):
             # TODO: split into training and validation sets if dataset is big enough....
             model.train()
             optimizer.zero_grad()
@@ -102,7 +102,7 @@ def main(args):
             if args.model_path is not None and (((idx+1) % args.save_step == 0) or (idx == total_step-1)): 
                 model.eval()
                 validation_loss = 0
-                for idx, (obs, targets) in enumerate(val_dataloader):
+                for idx, (obs, targets, _) in enumerate(val_dataloader):
                     obs = obs.float()
                     obs.to(device)
                     pred = model(obs.cuda())
@@ -153,7 +153,7 @@ if __name__ == '__main__':
                   help='batch size')
     parser.add_argument('--num_epoch', default=20, type=int,
                   help='number of epochs')
-    parser.add_argument('--learning_rate', default=0.0001, type=int,
+    parser.add_argument('--learning_rate', default=0.01, type=int,
                   help='learning rate')
     parser.add_argument('--model_path', default='bc_model/', type=str,
                   help='save model location')
