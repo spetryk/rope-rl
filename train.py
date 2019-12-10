@@ -98,8 +98,8 @@ def main(args):
     train_counter = 0
     validation_counter = 0
     for epoch in range(args.num_epoch):
-        train_loss = 0
-        for idx, (obs, targets, _) in enumerate(dataloader):
+        train_loss = 0.0
+        for train_idx, (obs, targets, _) in enumerate(dataloader):
             # TODO: split into training and validation sets if dataset is big enough....
             model.train()
             optimizer.zero_grad()
@@ -118,14 +118,14 @@ def main(args):
             optimizer.step()
             train_loss += loss.item()
 
-            if idx % args.log_step == 0:
+            if train_idx % args.log_step == 0:
                 print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Perplexity: {:5.4f}'
-                      .format(epoch, args.num_epoch, idx, total_step, loss.item(), np.exp(loss.item())))
+                      .format(epoch, args.num_epoch, train_idx, total_step, loss.item(), np.exp(loss.item())))
             
-            if args.model_path is not None and (((idx+1) % args.save_step == 0) or (idx == total_step-1)): 
+            if args.model_path is not None and (((train_idx+1) % args.save_step == 0) or (train_idx == total_step-1)): 
                 model.eval()
-                validation_loss = 0
-                for idx, (obs, targets, _) in enumerate(val_dataloader):
+                validation_loss = 0.0
+                for val_idx, (obs, targets, _) in enumerate(val_dataloader):
                     obs = obs.float()
                     obs.to(device)
                     pred = model(obs.cuda())
@@ -136,10 +136,10 @@ def main(args):
                     targets.to(device)
                     loss = criterion(pred, targets.cuda())
                     validation_loss += loss.item()
-                writer.add_scalar('Loss/validation', validation_loss, validation_counter)
+                writer.add_scalar('Loss/validation', validation_loss / val_idx, validation_counter)
                 validation_counter += 1
 
-                import pdb; pdb.set_trace()
+                #import pdb; pdb.set_trace()
 
                 # Save per-output loss
                 manual_mse = (pred - targets.cuda())**2
@@ -154,11 +154,11 @@ def main(args):
                     save_folder = os.path.join(args.model_path, args.features, args.training_set_size)
                     if not os.path.exists(save_folder):
                         os.makedirs(save_folder)
-                    save_path = os.path.join(save_folder, 'bc_model-{}-{}.ckpt'.format(epoch+1, idx+1))
+                    save_path = os.path.join(save_folder, 'bc_model-{}-{}.ckpt'.format(epoch+1, train_idx+1))
                     torch.save(model.state_dict(), save_path)
                     best_validation_loss = validation_loss     
 
-        writer.add_scalar('Loss/train', train_loss, train_counter)
+        writer.add_scalar('Loss/train', train_loss / train_idx, train_counter)
         train_counter += 1
         print('Train loss: -----epoch {}----- : {}'.format(epoch, train_loss))    
         print('Validation loss:               : {}'.format(validation_loss)) 
