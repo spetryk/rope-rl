@@ -139,9 +139,11 @@ def main(args):
                 writer.add_scalar('Loss/validation', validation_loss, validation_counter)
                 validation_counter += 1
 
+                import pdb; pdb.set_trace()
+
                 # Save per-output loss
-                manual_mse = (pred - targets)**2
-                print('mse shape: {}'.format(manual_mse.shape))
+                manual_mse = (pred - targets.cuda())**2
+                print('manual mse: {}'.format(manual_mse.mean()))
 
                 if best_validation_loss is None or validation_loss < best_validation_loss:
                     print("Validation Loss at epoch {} and step {}: {}... Previous Best Validation Loss: {}... saving model".format(epoch,
