@@ -15,22 +15,6 @@ from torch.utils.data import Dataset, DataLoader
 from tools.dense_correspondence_network import DenseCorrespondenceNetwork
 from tools.find_correspondences import CorrespondenceFinder
 
-import sys
-import pdb
-
-class ForkedPdb(pdb.Pdb):
-    """A Pdb subclass that may be used
-    from a forked multiprocessing child
-
-    """
-    def interaction(self, *args, **kwargs):
-        _stdin = sys.stdin
-        try:
-            sys.stdin = open('/dev/stdin')
-            pdb.Pdb.interaction(self, *args, **kwargs)
-        finally:
-            sys.stdin = _stdin
-
 class RopeTrajectoryDataset(Dataset):
     """ Rope trajectory dataset """
     def __init__(self, data_dir, network_dir, network, cfg_dir='../cfg', transform=None, features='priya',  dataset_fraction=1, save_im=False):
@@ -57,8 +41,6 @@ class RopeTrajectoryDataset(Dataset):
         npy_path = self.npy_list[idx]
 
         save_file_name = ''
-
-        ForkedPdb().set_trace()
 
         if self.features is 'priya':
             image = self.make_descriptors_images(depth_path)
