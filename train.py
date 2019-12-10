@@ -39,9 +39,6 @@ def main(args):
 
     writer = SummaryWriter(comment="_{}_{}".format(args.features, args.training_set_size))
 
-    if not os.path.exists(args.model_path):
-        os.makedirs(args.model_path)
-
     if args.training_set_size == "low":
         dataset_fraction = 1/3.0
     elif args.training_set_size == "medium":
@@ -148,14 +145,17 @@ def main(args):
                                                                                                                                     validation_loss,
                                                                                                                                     best_validation_loss,
                                                                                                                                     ))
-                    save_path = os.path.join(args.model_path, args.features, args.training_set_size, 'bc_model-{}-{}.ckpt'.format(epoch+1, idx+1))
+                    save_folder = os.path.join(args.model_path, args.features, args.training_set_size)
+                    if not os.path.exists(save_folder):
+                        os.makedirs(save_folder)
+                    save_path = os.path.join(save_folder, 'bc_model-{}-{}.ckpt'.format(epoch+1, idx+1))
                     torch.save(model.state_dict(), save_path)
                     best_validation_loss = validation_loss     
 
         writer.add_scalar('Loss/train', train_loss, train_counter)
         train_counter += 1
         print('Train loss: -----epoch {}----- : {}'.format(epoch, train_loss))    
-    
+        print('Validation loss:               : {}'.format(validation_loss)) 
     writer.close()
 
 if __name__ == '__main__':
@@ -179,7 +179,7 @@ if __name__ == '__main__':
                   help='batch size')
     parser.add_argument('--num_epoch', default=20, type=int,
                   help='number of epochs')
-    parser.add_argument('--learning_rate', default=0.0001, type=int,
+    parser.add_argument('--learning_rate', default=0.01, type=int,
                   help='learning rate')
     parser.add_argument('--model_path', default='bc_model/', type=str,
                   help='save model location')

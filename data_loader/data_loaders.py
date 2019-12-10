@@ -8,6 +8,7 @@ import json
 import yaml
 import matplotlib.pyplot as plt
 
+import PIL
 from PIL import Image
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -60,7 +61,7 @@ class RopeTrajectoryDataset(Dataset):
         # image must be in range [0,1] by this pt, and must be PIL Image
         assert(torch.max(transforms.ToTensor()(image)) <= 1.)
         assert(torch.min(transforms.ToTensor()(image)) >= 0.)
-        assert(type(image)==PIL.PngImagePlugin.PngImageFile)
+        #assert(type(image)==PIL.PngImagePlugin.PngImageFile)
 
         image = self.transform(image)
 
