@@ -122,7 +122,7 @@ class RopeTrajectoryDataset(Dataset):
         res_a = self.cf.dcn.forward_single_image_tensor(rgb_a_tensor).data.cpu().numpy()
         descriptor_image_stats = yaml.load(file(descriptor_stats_config), Loader=CLoader)
         descriptor_image_stats = yaml.load(file(self.descriptor_stats_config))
-        res_a = self.normalize_descriptor(res_a, descriptor_image_stats["mask_image"])
+        res_a = self.normalize_descriptor(res_a, descriptor_image_stats["entire_image"])
         #print("make_descriptors", self.save_im)
         return res_a
 
