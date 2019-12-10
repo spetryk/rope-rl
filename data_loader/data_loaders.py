@@ -57,9 +57,10 @@ class RopeTrajectoryDataset(Dataset):
             #image = self.cf.rgb_image_to_tensor(image)
             #desc_image = self.normalize_descriptor(desc_image)
 
-        # image must be in range [0,1] by this pt
+        # image must be in range [0,1] by this pt, and must be PIL Image
         assert(torch.max(transforms.ToTensor()(image)) <= 1.)
         assert(torch.min(transforms.ToTensor()(image)) >= 0.)
+        assert(type(image)==PIL.PngImagePlugin.PngImageFile)
 
         image = self.transform(image)
 

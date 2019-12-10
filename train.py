@@ -68,7 +68,6 @@ def main(args):
         #         'std_dev': [0.1305] * 3}
 
     transform = transforms.Compose([
-        transforms.ToPILImage(),
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
         transforms.Normalize(stats['mean'], stats['std_dev'])
