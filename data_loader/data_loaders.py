@@ -41,8 +41,7 @@ class RopeTrajectoryDataset(Dataset):
         npy_path = self.npy_list[idx]
 
         save_file_name = ''
-
-        if self.features is 'priya':
+        if self.features == 'priya':
             image = self.make_descriptors_images(depth_path)
             if self.save_im:
                 save_file_name = os.path.join('data/res/', '{}_res_priya.png'.format(os.path.basename(depth_path)))
@@ -112,18 +111,17 @@ class RopeTrajectoryDataset(Dataset):
 
 
     def make_descriptors_images(self, image_path):
-        rgb_a = Image.open(image_path).convert('RGB')
-
+        rgb_a = Image.open(image_path).convert('RGB').resize((640,480))
         # compute dense descriptors
         # This takes in a PIL image!
         rgb_a_tensor = self.cf.rgb_image_to_tensor(rgb_a)
 
         # these are Variables holding torch.FloatTensors, convert to numpy
         res_a = self.cf.dcn.forward_single_image_tensor(rgb_a_tensor).data.cpu().numpy()
-        descriptor_image_stats = yaml.load(file(descriptor_stats_config), Loader=CLoader)
+        #print('min res: {}, max res: {}'.format(np.min(res_a), np.max(res_a)))
         descriptor_image_stats = yaml.load(file(self.descriptor_stats_config))
         res_a = self.normalize_descriptor(res_a, descriptor_image_stats["entire_image"])
-        #print("make_descriptors", self.save_im)
+        #print('min of norm: {}, max of norm: {}'.format(np.min(res_a), np.max(res_a)))
         return res_a
 
     def normalize_descriptor(self, res, stats=None):
