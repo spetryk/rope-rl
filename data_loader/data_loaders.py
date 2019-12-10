@@ -61,7 +61,7 @@ class RopeTrajectoryDataset(Dataset):
         assert(torch.max(transforms.ToTensor()(image)) <= 1.)
         assert(torch.min(transforms.ToTensor()(image)) >= 0.)
         #assert(type(image)==PIL.PngImagePlugin.PngImageFile)
-
+        print(image.shape)
         image = self.transform(image)
 
         actions = []
@@ -122,6 +122,8 @@ class RopeTrajectoryDataset(Dataset):
         descriptor_image_stats = yaml.load(file(self.descriptor_stats_config))
         res_a = self.normalize_descriptor(res_a, descriptor_image_stats["entire_image"])
         #print('min of norm: {}, max of norm: {}'.format(np.min(res_a), np.max(res_a)))
+        # Convert to PIL Image
+        res_a = Image.fromarray(res_a)
         return res_a
 
     def normalize_descriptor(self, res, stats=None):
