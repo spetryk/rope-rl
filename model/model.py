@@ -46,3 +46,26 @@ class BasicModel(nn.Module):
         output = output.view(output.size(0), -1)
         output = self.linear_layers(output)
         return output    
+
+class ResNet18(nn.Module):
+    def __init__(self, pretrained=False, channels=3):
+        super(ResNet18, self).__init__()
+        m = torchvision.models.resnet18(pretrained=pretrained)
+        m.fc = nn.Linear(in_features=512, out_features=7)
+
+        if channels == 1:
+            assert not pretrained, "Pretrained model can only be used with 3-channel image"
+            m.conv1 = nn.Conv2d(1, 64, kernel_size=(7,7), stride=(2,2), padding=(3,3), bias=False)
+
+        self.model = m
+
+    def forward(self, input):
+        input = input.view(input.size(0), 772, 1032, 3)
+        input = input.permute(0, 3, 1, 2)
+        output = self.conv_layers(input)
+        output = output.view(output.size(0), -1)
+        output = self.linear_layers(output)
+        return output    
+
+
+

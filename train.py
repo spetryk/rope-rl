@@ -14,6 +14,8 @@ from torch.autograd import Variable
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.tensorboard import SummaryWriter
+from torchvision import transforms
+
 
 # fix random seeds for reproducibility
 SEED = 123
@@ -47,14 +49,32 @@ def main(args):
         print("training_set_size specified is not one of (low, medium, high)... using all training data")
         dataset_fraction = 1
 
-    rope_dataset = RopeTrajectoryDataset(args.data_dir, args.network_dir, args.network, 
-                                         cfg_dir=args.config, transform=None, features=args.features, dataset_fraction=dataset_fraction)
 
-    val_dataset = RopeTrajectoryDataset(args.val_dir, args.network_dir, args.network, 
-                                         cfg_dir=args.config, transform=None, features=args.features)
-    dataloader = DataLoader(rope_dataset, batch_size=args.batch_size, shuffle=True, 
+    if args.pretrained:
+        # Use ImageNet stats
+        stats = {'mean': [0.485, 0.456, 0.406],
+                 'std_dev': [0.229, 0.224, 0.225]}
+    else:
+        # Mean and std dev of depth image train dataset
+        stats = {'mean': [0.0331],
+                 'std_dev': [0.1305]}
+
+
+    transform = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(stats['mean'], stats['std_dev'])
+    ])
+
+    rope_dataset = RopeTrajectoryDataset(args.data_dir, args.network_dir, args.network,
+                                         cfg_dir=args.config, transform=transform, features=args.features, dataset_fraction=dataset_fraction)
+
+    val_dataset = RopeTrajectoryDataset(args.val_dir, args.network_dir, args.network,
+                                         cfg_dir=args.config, transform=transform, features=args.features)
+    dataloader = DataLoader(rope_dataset, batch_size=args.batch_size, shuffle=True,
                             num_workers=args.num_workers)
-    val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True, 
+    val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True,
                                 num_workers=args.num_workers)
 
     model = BasicModel()
@@ -157,6 +177,8 @@ if __name__ == '__main__':
                   help='learning rate')
     parser.add_argument('--model_path', default='bc_model/', type=str,
                   help='save model location')
+    parser.add_argument('--pretrained', action=store_true, type=str,
+                    help='If using depth images, flag to use pretrained model')
 
     # logging arguments
     parser.add_argument('--log_step', default=2, type=int,

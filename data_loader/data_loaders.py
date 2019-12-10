@@ -17,7 +17,7 @@ class RopeTrajectoryDataset(Dataset):
     """ Rope trajectory dataset """
     def __init__(self, data_dir, network_dir, network, cfg_dir='../cfg', transform=None, features='priya',  dataset_fraction=1, save_im=False):
         self.data_dir = data_dir
-        self.timestamps, self.depth_list, self.json_list, self.mask_list, self.npy_list = self.filter_trajectories(dataset_fraction) 
+        self.timestamps, self.depth_list, self.json_list, self.mask_list, self.npy_list = self.filter_trajectories(dataset_fraction)
 
         # Path to network 
         network_path = os.path.join(network_dir, network)
@@ -28,6 +28,7 @@ class RopeTrajectoryDataset(Dataset):
         dataset_mean, dataset_std_dev = dataset_stats["mean"], dataset_stats["std_dev"]
         self.cf = CorrespondenceFinder(self.dcn, dataset_mean, dataset_std_dev)
         self.descriptor_stats_config = os.path.join(network_path, 'descriptor_statistics.yaml')
+        self.transform = transform
         self.features = features
         self.save_im = save_im
 
@@ -40,22 +41,27 @@ class RopeTrajectoryDataset(Dataset):
         save_file_name = ''
 
         if self.features is 'priya':
-            desc_image = self.make_descriptors_images(depth_path)
+            image = self.make_descriptors_images(depth_path)
             if self.save_im:
                 save_file_name = os.path.join('data/res/', '{}_res_priya.png'.format(os.path.basename(depth_path)))
                 print('saving feat. to: {}', save_file_name)
-                plt.imsave(save_file_name, desc_image)
+                plt.imsave(save_file_name, image)
         else:
-            desc_image = Image.open(depth_path).convert('RGB')
+            image = Image.open(depth_path).convert('RGB')
             if self.save_im:
                 save_file_name = os.path.join('data/res/', '{}_res_none.png'.format(os.path.basename(depth_path)))
                 print('saving feat. to: {}', save_file_name)
-                plt.imsave(save_file_name, desc_image)
-                
-            desc_image = self.cf.rgb_image_to_tensor(desc_image)
-            desc_image = self.normalize_descriptor(desc_image)
-        
-        
+                plt.imsave(save_file_name, image)
+
+            #image = self.cf.rgb_image_to_tensor(image)
+            #desc_image = self.normalize_descriptor(desc_image)
+
+        # image must be in range [0,1] by this pt
+        assert(torch.max(transforms.ToTensor()(image)) <= 1.)
+        assert(torch.min(transforms.ToTensor()(image)) >= 0.)
+
+        image = self.transform(image)
+
         actions = []
         with open(json_path) as f:
             js = json.load(f)
@@ -65,7 +71,7 @@ class RopeTrajectoryDataset(Dataset):
 
         actions = np.hstack(actions)
 
-        return desc_image, list(actions), save_file_name
+        return image, list(actions), save_file_name
 
     def __len__(self):
         return len(self.depth_list)
@@ -109,12 +115,12 @@ class RopeTrajectoryDataset(Dataset):
         # This takes in a PIL image!
         rgb_a_tensor = self.cf.rgb_image_to_tensor(rgb_a)
 
-        # these are Variables holding torch.FloatTensors, first grab the data, then convert to numpy
+        # these are Variables holding torch.FloatTensors, convert to numpy
         res_a = self.cf.dcn.forward_single_image_tensor(rgb_a_tensor).data.cpu().numpy()
-        #descriptor_image_stats = yaml.load(file(descriptor_stats_config), Loader=CLoader)
+        descriptor_image_stats = yaml.load(file(descriptor_stats_config), Loader=CLoader)
         descriptor_image_stats = yaml.load(file(self.descriptor_stats_config))
         res_a = self.normalize_descriptor(res_a, descriptor_image_stats["mask_image"])
-        print("make_descriptors", self.save_im)
+        #print("make_descriptors", self.save_im)
         return res_a
 
     def normalize_descriptor(self, res, stats=None):
