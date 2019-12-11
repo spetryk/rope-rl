@@ -72,16 +72,16 @@ def main(args):
     ])
 
     rope_dataset = RopeTrajectoryDataset(args.data_dir, args.network_dir, args.network,
-                                         cfg_dir=args.config, transform=transform, features=args.features, dataset_fraction=dataset_fraction)
+                                         cfg_dir=args.config, transform=transform, features=args.features, dataset_fraction=dataset_fraction, pretrained=args.pretrained)
 
     val_dataset = RopeTrajectoryDataset(args.val_dir, args.network_dir, args.network,
-                                         cfg_dir=args.config, transform=transform, features=args.features)
+                                         cfg_dir=args.config, transform=transform, features=args.features, pretrained=args.pretrained)
     dataloader = DataLoader(rope_dataset, batch_size=args.batch_size, shuffle=True,
                             num_workers=args.num_workers)
     val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True,
                                 num_workers=args.num_workers)
 
-    model = ResNet18(args.pretrained, channels=len(stats['mean']))
+    model = ResNet18(args.pretrained, channels=1 if not args.pretrained and args.features == 'none' else 3)
     model = model.float().cuda()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     criterion = nn.MSELoss()

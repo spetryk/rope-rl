@@ -17,7 +17,7 @@ from tools.find_correspondences import CorrespondenceFinder
 
 class RopeTrajectoryDataset(Dataset):
     """ Rope trajectory dataset """
-    def __init__(self, data_dir, network_dir, network, cfg_dir='../cfg', transform=None, features='priya',  dataset_fraction=1, save_im=False):
+    def __init__(self, data_dir, network_dir, network, cfg_dir='../cfg', transform=None, features='priya',  dataset_fraction=1, save_im=False, pretrained=True):
         self.data_dir = data_dir
         self.timestamps, self.depth_list, self.json_list, self.mask_list, self.npy_list = self.filter_trajectories(dataset_fraction)
 
@@ -33,6 +33,7 @@ class RopeTrajectoryDataset(Dataset):
         self.transform = transform
         self.features = features
         self.save_im = save_im
+        self.pretrained = pretrained
 
     def __getitem__(self, idx):
         depth_path = self.depth_list[idx]
@@ -49,6 +50,10 @@ class RopeTrajectoryDataset(Dataset):
                 plt.imsave(save_file_name, image)
         else:
             image = Image.open(depth_path).convert('RGB')
+            if not self.pretrained:
+                # Take just one channel
+                image = np.array(image)[0,:,:]
+                image = Image.fromarray(image)
             if self.save_im:
                 save_file_name = os.path.join('data/res/', '{}_res_none.png'.format(os.path.basename(depth_path)))
                 print('saving feat. to: {}', save_file_name)
