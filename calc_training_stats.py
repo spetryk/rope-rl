@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 
 def main(args):
     dataset = RopeTrajectoryDataset(args.train_dir, args.network_dir, args.network, 
-                                         cfg_dir=args.config, transform=None, features='priya', postprocess=False)
+                                         cfg_dir=args.config, transform=None, features='priya', postprocess=True)
     dataloader = DataLoader(dataset, batch_size=len(dataset), shuffle=False)
     print("batch size", len(dataset))
     js = {}

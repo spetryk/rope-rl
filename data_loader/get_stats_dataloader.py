@@ -51,10 +51,10 @@ class RopeTrajectoryDataset(Dataset):
         if self.features == 'priya':
             image = self.make_descriptors_images(depth_path)
             if self.postprocess:
-                image = image.transform(image)
+                image = transform(image)
         else:
             image = Image.open(depth_path).convert('RGB')
-            image = image.transform(image)
+            image = transform(image)
 
         return image
 
@@ -90,7 +90,7 @@ class RopeTrajectoryDataset(Dataset):
 
         print("dataset_size", len(depth_list))
         dataset_size = int(round(len(depth_list) * dataset_fraction))
-        dataset_size=3
+        #dataset_size=3 #TODO: debug
         return list(set(timestamps))[:dataset_size], depth_list[:dataset_size], json_list[:dataset_size], mask_list[:dataset_size], npy_list[:dataset_size]
 
 
@@ -102,7 +102,6 @@ class RopeTrajectoryDataset(Dataset):
 
         # these are Variables holding torch.FloatTensors, convert to numpy
         res_a = self.cf.dcn.forward_single_image_tensor(rgb_a_tensor).data.cpu().numpy()
-
         if self.postprocess:
             with open('stats_pre_priya.json') as f:
                 data = json.load(f)

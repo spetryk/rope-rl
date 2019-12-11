@@ -29,7 +29,7 @@ class RopeTrajectoryDataset(Dataset):
             dataset_stats = json.load(f)
         dataset_mean, dataset_std_dev = dataset_stats["mean"], dataset_stats["std_dev"]
         self.cf = CorrespondenceFinder(self.dcn, dataset_mean, dataset_std_dev)
-        self.descriptor_stats_config = os.path.join(network_path, 'descriptor_statistics.yaml')
+        self.descriptor_stats_config = 'stats_pre_priya.json'
         self.transform = transform
         self.features = features
         self.save_im = save_im
@@ -111,12 +111,11 @@ class RopeTrajectoryDataset(Dataset):
         # compute dense descriptors
         # This takes in a PIL image!
         rgb_a_tensor = self.cf.rgb_image_to_tensor(rgb_a)
-
         # these are Variables holding torch.FloatTensors, convert to numpy
         res_a = self.cf.dcn.forward_single_image_tensor(rgb_a_tensor).data.cpu().numpy()
-
-        descriptor_image_stats = yaml.load(file(self.descriptor_stats_config))
-        res_a = self.normalize_descriptor(res_a, descriptor_image_stats["entire_image"]) # TODO: replace w/ updated stats
+        with open(self.descriptor_stats_config) as f:
+            descriptor_image_stats = json.load(f)
+        res_a = self.normalize_descriptor(res_a, descriptor_image_stats)
 
         # Convert to range [0,255] and float32
         res_a = (res_a * 255.).astype(np.uint8)
