@@ -13,21 +13,32 @@ import torch.nn.init as init
 from torch.autograd import Variable
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
+from torchvision import transforms
+
 
 import matplotlib.pyplot as plt
 
 def main(args):
+
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(stats['mean'], stats['std'])
+    ])
+
+
     test_dataset_none = RopeTrajectoryDataset(args.test_dir, args.network_dir, args.network, 
-                                         cfg_dir=args.config, transform=None, features='none', save_im=True, dataset_fraction=1/3.0)
+                                         cfg_dir=args.config, transform=transform, features='none', save_im=True, dataset_fraction=1, pretrained=args.pretrained)
     test_dataloader_none = DataLoader(test_dataset_none, batch_size=32, shuffle=False)
 
     test_dataset_priya = RopeTrajectoryDataset(args.test_dir, args.network_dir, args.network, 
-                                         cfg_dir=args.config, transform=None, features='priya', save_im=True, dataset_fraction=1/3.0)
+                                         cfg_dir=args.config, transform=transform, features='priya', save_im=True, dataset_fraction=1, pretrained=args.pretrained)
     test_dataloader_priya = DataLoader(test_dataset_priya, batch_size=32, shuffle=False)
+
 
     model_paths = []
     for size in ['high', 'med', 'low']:
-        info = []
+        info = {}
         for feat in ['none', 'priya']:
             mdir = os.path.join(args.model_dir, feat, size)
             files = os.listdir(mdir)
@@ -35,14 +46,16 @@ def main(args):
             best_model = os.path.join(mdir, files[-1])
             print('...processing: {}'.format(best_model))
             if feat is 'none':
-                info.append(eval_model(test_dataloader_none, best_model, feat))
+                info[feat] = (eval_model(test_dataloader_none, best_model, feat, args.pretrained))
             else:
-                info.append(eval_model(test_dataloader_priya, best_model, feat))
-        print('priya: {}'.format(info[0]))
-        print('none-: {}'.format(info[1]))
+                info[feat] = (eval_model(test_dataloader_priya, best_model, feat, args.pretrained))
 
-def eval_model(dataloader, model_path, feat):
-    model = BasicModel().float()
+        print('priya: {}'.format(info["none"]))
+        print('none-: {}'.format(info["priya"]))
+
+def eval_model(dataloader, model_path, feat, pretrained):
+    model = ResNet18(args.pretrained, channels=1 if not pretrained and feat == 'none' else 3).float()
+    # model = BasicModel().float()
     model.load_state_dict(torch.load(model_path))
     model.eval()
     criterion = nn.MSELoss()
