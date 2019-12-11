@@ -42,7 +42,8 @@ class RopeTrajectoryDataset(Dataset):
         npy_path = self.npy_list[idx]
         desc_path = self.desc_list[idx]
 
-        save_file_name = ''
+        save_file_name = os.path.basename(depth_path).split(".")[0]
+        print(save_file_name)
         if self.features == 'priya':
             #image = self.make_descriptors_images(depth_path)
             image = Image.open(desc_path).convert('RGB')
