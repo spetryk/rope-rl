@@ -5,7 +5,7 @@ import numpy as np
 import os
 import json
 
-from behavioral_cloning.data_loader.get_stats_dataloaders import RopeTrajectoryDataset
+from behavioral_cloning.data_loader.get_stats_dataloader import RopeTrajectoryDataset
 from behavioral_cloning.model.model import BasicModel
 
 import torch
@@ -19,17 +19,24 @@ import matplotlib.pyplot as plt
 
 def main(args):
     dataset = RopeTrajectoryDataset(args.train_dir, args.network_dir, args.network, 
-                                         cfg_dir=args.config, transform=None, features='priya')
+                                         cfg_dir=args.config, transform=None, features='priya', postprocess=True)
     dataloader = DataLoader(dataset, batch_size=len(dataset), shuffle=False)
-
+    print("batch size", len(dataset))
     js = {}
-    for idx, (obs, _, _) in enumerate(dataloader):
+    for idx, obs in enumerate(dataloader):
+        print(obs.shape)
         mean = obs.mean()
         print(mean)
         std = obs.std()
         print(std)
         js['mean'] = mean.item()
         js['std'] = std.item()
+        obs = obs.view(-1, 3)
+        print(obs.shape)
+        mins, _ = torch.min(obs, 0)
+        maxs, _ = torch.max(obs, 0)
+        js['min'] = mins.detach().numpy().tolist()
+        js['max'] = maxs.detach().numpy().tolist()
     with open(args.save_file, 'w') as outfile:
         json.dump(js, outfile)
 
