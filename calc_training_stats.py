@@ -24,14 +24,13 @@ def main(args):
     print("batch size", len(dataset))
     js = {}
     for idx, obs in enumerate(dataloader):
-        print(obs.shape)
-        mean = obs.mean()
+        obs = obs.view(-1, 3)
+        mean = obs.mean(0)
         print(mean)
-        std = obs.std()
+        std = obs.std(0)
         print(std)
         js['mean'] = mean.item()
         js['std'] = std.item()
-        obs = obs.view(-1, 3)
         print(obs.shape)
         mins, _ = torch.min(obs, 0)
         maxs, _ = torch.max(obs, 0)

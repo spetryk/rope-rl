@@ -17,7 +17,9 @@ from tools.find_correspondences import CorrespondenceFinder
 
 class RopeTrajectoryDataset(Dataset):
     """ Rope trajectory dataset """
-    def __init__(self, data_dir, network_dir, network, cfg_dir='../cfg', transform=None, features='priya',  dataset_fraction=1, save_im=False):
+    def __init__(self, data_dir, network_dir, network, 
+                 cfg_dir='../cfg', transform=None, features='priya',  dataset_fraction=1, 
+                 save_im=False, postprocess=True):
         self.data_dir = data_dir
         self.timestamps, self.depth_list, self.json_list, self.mask_list, self.npy_list = self.filter_trajectories(dataset_fraction)
 
@@ -33,6 +35,7 @@ class RopeTrajectoryDataset(Dataset):
         self.transform = transform
         self.features = features
         self.save_im = save_im
+        self.postprocess = postprocess
 
     def __getitem__(self, idx):
         depth_path = self.depth_list[idx]
@@ -41,14 +44,16 @@ class RopeTrajectoryDataset(Dataset):
         npy_path = self.npy_list[idx]
 
         save_file_name = ''
+        transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor()
+        ])
         if self.features == 'priya':
             image = self.make_descriptors_images(depth_path)
+            if self.postprocess:
+                image = image.transform(image)
         else:
             image = Image.open(depth_path).convert('RGB')
-            transform = transforms.Compose([
-                transforms.Resize((224, 224)),
-                transforms.ToTensor()
-            ])
             image = image.transform(image)
 
         return image
@@ -98,4 +103,31 @@ class RopeTrajectoryDataset(Dataset):
         # these are Variables holding torch.FloatTensors, convert to numpy
         res_a = self.cf.dcn.forward_single_image_tensor(rgb_a_tensor).data.cpu().numpy()
 
+        if self.postprocess:
+            with open('stats_pre_priya.json') as f:
+                data = json.load(f)
+
+            res_a = self.normalize_descriptor(res_a, data['min'], data['max']) # TODO: replace w/ updated stats
+
+            # Convert to range [0,255] and float32
+            res_a = (res_a * 255.).astype(np.uint8)
+
+            # Convert to PIL Image
+            res_a =  transforms.ToPILImage()(res_a)
+
         return res_a
+
+    def normalize_descriptor(self, res, res_min, res_max):
+        """
+        Normalizes the descriptor into RGB color space
+        :param res: numpy.array [H,W,D]
+            Output of the network, per-pixel dense descriptor
+        :param stats: dict, with fields ['min', 'max', 'mean'], which are used to normalize descriptor
+        :return: numpy.array
+            normalized descriptor
+        """
+        normed_res = np.clip(res, res_min, res_max)
+        eps = 1e-10
+        scale = (res_max - res_min) + eps
+        normed_res = (normed_res - res_min) / scale
+        return normed_res
