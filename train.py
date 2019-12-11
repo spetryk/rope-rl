@@ -186,7 +186,7 @@ if __name__ == '__main__':
                   help='batch size')
     parser.add_argument('--num_epoch', default=20, type=int,
                   help='number of epochs')
-    parser.add_argument('--learning_rate', default=0.01, type=int,
+    parser.add_argument('--learning_rate', default=0.001, type=float,
                   help='learning rate')
     parser.add_argument('--model_path', default='bc_model/', type=str,
                   help='save model location')
