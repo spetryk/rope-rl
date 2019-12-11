@@ -90,7 +90,7 @@ class RopeTrajectoryDataset(Dataset):
 
         print("dataset_size", len(depth_list))
         dataset_size = int(round(len(depth_list) * dataset_fraction))
-
+        dataset_size=3
         return list(set(timestamps))[:dataset_size], depth_list[:dataset_size], json_list[:dataset_size], mask_list[:dataset_size], npy_list[:dataset_size]
 
 
@@ -107,7 +107,7 @@ class RopeTrajectoryDataset(Dataset):
             with open('stats_pre_priya.json') as f:
                 data = json.load(f)
 
-            res_a = self.normalize_descriptor(res_a, data['min'], data['max']) # TODO: replace w/ updated stats
+            res_a = self.normalize_descriptor(res_a, np.array(data['min']), np.array(data['max'])) # TODO: replace w/ updated stats
 
             # Convert to range [0,255] and float32
             res_a = (res_a * 255.).astype(np.uint8)
