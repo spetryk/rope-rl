@@ -20,19 +20,39 @@ import matplotlib.pyplot as plt
 
 def main(args):
 
-    transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize(stats['mean'], stats['std'])
-    ])
+    if args.pretrained:
+        # Use ImageNet stats, for both feature desc and depth image networks
+        none_stats = {'mean': [0.485, 0.456, 0.406],
+                      'std': [0.229, 0.224, 0.225]}
+        priya_stats = none_stats
+
+    else:
+        # Using depth images and not pretrained: single channel input
+        # Mean and std dev of depth image train dataset
+        with open('stats_pre_none.json') as f:
+            none_stats = json.load(f)
+            none_transform = transforms.Compose([
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize(none_stats['mean'], none_stats['std'])
+            ])
+
+        # Feature descriptors and not pretrained
+        with open('stats_POST_priya.json') as f:
+            priya_stats = json.load(f)
+            priya_transform = transforms.Compose([
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize(priya_stats['mean'], priya_stats['std'])
+            ])
 
 
     test_dataset_none = RopeTrajectoryDataset(args.test_dir, args.network_dir, args.network, 
-                                         cfg_dir=args.config, transform=transform, features='none', save_im=True, dataset_fraction=1, pretrained=args.pretrained)
+                                         cfg_dir=args.config, transform=none_transform, features='none', save_im=True, dataset_fraction=1, pretrained=args.pretrained)
     test_dataloader_none = DataLoader(test_dataset_none, batch_size=32, shuffle=False)
 
     test_dataset_priya = RopeTrajectoryDataset(args.test_dir, args.network_dir, args.network, 
-                                         cfg_dir=args.config, transform=transform, features='priya', save_im=True, dataset_fraction=1, pretrained=args.pretrained)
+                                         cfg_dir=args.config, transform=priya_transform, features='priya', save_im=True, dataset_fraction=1, pretrained=args.pretrained)
     test_dataloader_priya = DataLoader(test_dataset_priya, batch_size=32, shuffle=False)
 
 
@@ -98,5 +118,9 @@ if __name__ == '__main__':
     # training specific arguments
     parser.add_argument('--model_dir', default='bc_model/', type=str,
                       help='path to the pretrained model')
+
+    parser.add_argument('--pretrained', action='store_true',
+                    help='If using depth images, flag to use pretrained model')
+
     args = parser.parse_args()
     main(args)
