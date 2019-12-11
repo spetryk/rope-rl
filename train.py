@@ -137,7 +137,7 @@ def main(args):
                     targets.to(device)
                     loss = criterion(pred, targets.cuda())
                     validation_loss += loss.item()
-                writer.add_scalar('Loss/validation', validation_loss / val_idx, validation_counter)
+                writer.add_scalar('Loss/validation', validation_loss / (val_idx+1), validation_counter)
                 validation_counter += 1
 
                 #import pdb; pdb.set_trace()
@@ -146,10 +146,10 @@ def main(args):
                 manual_mse = (pred - targets.cuda())**2
                 print('manual mse: {}'.format(manual_mse.mean()))
 
-                if best_validation_loss is None or (validation_loss / val_idx) < best_validation_loss:
+                if best_validation_loss is None or (validation_loss / (val_idx+1)) < best_validation_loss:
                     print("Validation Loss at epoch {} and step {}: {}... Previous Best Validation Loss: {}... saving model".format(epoch,
                                                                                                                                     train_idx,
-                                                                                                                                    validation_loss / val_idx,
+                                                                                                                                    validation_loss / (val_idx+1),
                                                                                                                                     best_validation_loss,
                                                                                                                                     ))
                     save_folder = os.path.join(args.model_path, args.features, args.training_set_size)
@@ -157,12 +157,12 @@ def main(args):
                         os.makedirs(save_folder)
                     save_path = os.path.join(save_folder, 'bc_model-{}-{}.ckpt'.format(epoch+1, train_idx+1))
                     torch.save(model.state_dict(), save_path)
-                    best_validation_loss = validation_loss / val_idx     
+                    best_validation_loss = validation_loss / (val_idx+1)    
 
-        writer.add_scalar('Loss/train', train_loss / train_idx, train_counter)
+        writer.add_scalar('Loss/train', train_loss / (train_idx+1), train_counter)
         train_counter += 1
-        print('Train loss: -----epoch {}----- : {}'.format(epoch, train_loss / train_idx))    
-        print('Validation loss:               : {}'.format(validation_loss / val_idx)) 
+        print('Train loss: -----epoch {}----- : {}'.format(epoch, train_loss / (train_idx+1)))    
+        print('Validation loss:               : {}'.format(validation_loss / (val_idx+1))) 
     writer.close()
 
 if __name__ == '__main__':
