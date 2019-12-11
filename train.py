@@ -47,7 +47,9 @@ def mse_loss(pred, targets):
     two_pi_mask = ((orientation_diff >= 3*np.pi/2.) * (orientation_diff <    2*np.pi)).float()
     two_pi_mask = two_pi_mask * (-2.*np.pi)
     orientation_diff = orientation_diff + pi_mask + two_pi_mask
-    diff[:,-1] = orientation_diff
+    mask = torch.ones(diff.shape).float()
+    mask[:,-1] = orientation_diff
+    diff = diff * mask
     mse_loss = (diff**2).mean()
     return mse_loss
 
