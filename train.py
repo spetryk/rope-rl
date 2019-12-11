@@ -121,7 +121,7 @@ def main(args):
             optimizer.step()
             train_loss += loss.item()
 
-            manual_train_loss = np.mean((pred - targets.cuda())**2, axis=0)
+            manual_train_loss = np.mean(((pred - targets.cuda())**2).detach().cpu().numpy(), axis=0)
             if split_losses_train is None:
                 split_losses_train = manual_train_loss
             else:
@@ -146,7 +146,7 @@ def main(args):
                     targets.to(device)
                     loss = criterion(pred, targets.cuda())
                     validation_loss += loss.item()
-                    manual_val_loss = np.mean((pred - targets.cuda())**2, axis=0)
+                    manual_val_loss = np.mean(((pred - targets.cuda())**2).detach().cpu().numpy(), axis=0)
                     if split_losses_val is None:
                         split_losses_val = manual_val_loss
                     else:
