@@ -71,14 +71,14 @@ def main(args):
             best_model = os.path.join(mdir, files[-1])
             print('...processing: {}'.format(best_model))
             if feat is 'none':
-                info[feat] = (eval_model(test_dataloader_none, best_model, feat, args.pretrained, args.save_dir))
+                info[feat] = (eval_model(test_dataloader_none, best_model, feat, args.pretrained, args.save_dir, size))
             else:
-                info[feat] = (eval_model(test_dataloader_priya, best_model, feat, args.pretrained, args.save_dir))
+                info[feat] = (eval_model(test_dataloader_priya, best_model, feat, args.pretrained, args.save_dir, size))
 
         print('priya: {}'.format(info["none"]))
         print('none-: {}'.format(info["priya"]))
 
-def eval_model(dataloader, model_path, feat, pretrained, save_dir):
+def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
     model = ResNet18(args.pretrained, channels=1 if not pretrained and feat == 'none' else 3).float()
     # model = BasicModel().float()
     model.load_state_dict(torch.load(model_path))
@@ -96,12 +96,23 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir):
         
         # Save the image outputs
         for t, p, f in zip(targets, pred, filenames):
-            plt.scatter([t[0].item()], [t[1].item()], c='r', marker='o') # grasp [target]
-            plt.scatter([t[3].item()], [t[4].item()], c='r', marker='x') # drop [target]
-            plt.scatter([p[0].item()], [p[1].item()], c='b', marker='o') # grasp [pred]
-            plt.scatter([p[3].item()], [p[4].item()], c='b', marker='x') # drop [pred]
+            plt.scatter([t[0].item()], [t[1].item()], c='r', marker='o', label="ground truth grasp") # grasp [target]
+            plt.scatter([t[3].item()], [t[4].item()], c='r', marker='x', label="ground truth drop") # drop [target]
+            plt.scatter([p[0].item()], [p[1].item()], c='b', marker='o', label="predicted grasp") # grasp [pred]
+            plt.scatter([p[3].item()], [p[4].item()], c='b', marker='x', label="predicted drop") # drop [pred]
             fn = os.path.join(save_dir, fn)
+            plt.legend()
+            if pretrained and feat == "none":
+                plt.title("Model pretrained on ImageNet using depth images")
+            elif  pretrained and feat == "priya":
+                plt.title("Model pretrained on ImageNet using descriptor images")
+            elif pretrained and feat == "none":
+                plt.title("Model pretrained on ImageNet using depth images")
+            else  pretrained and feat == "priya":
+                plt.title("Model pretrained on ImageNet using descriptor images")
+            plt.title("")
             plt.savefig('{}_points.png'.format(fn))
+            plt.figure()
             print('saving plot to:', '{}_points.png'.format(fn))
 
     return (np.sum(test_loss), np.mean(test_loss), np.std(test_loss))
