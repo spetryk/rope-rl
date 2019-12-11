@@ -42,8 +42,10 @@ def mse_loss(pred, targets):
     """
     diff = pred - targets.cuda()
     orientation_diff = torch.abs(diff[:,-1])
-    orientation_diff[orientation_diff[orientation_diff >=   np.pi/2.] < 3*np.pi/2.] -=   np.pi
-    orientation_diff[orientation_diff[orientation_diff >= 3*np.pi/2.] < 2*np.pi]    -= 2*np.pi
+    if len(orientation_diff[orientation_diff >= np.pi/2.]) > 0:
+        orientation_diff[orientation_diff[orientation_diff >=   np.pi/2.] < 3*np.pi/2.] -=   np.pi
+    if len(orientation_diff[orientation_diff >= 3*np.pi/2.]) > 0:
+           orientation_diff[orientation_diff[orientation_diff >= 3*np.pi/2.] < 2*np.pi] -= 2*np.pi
     diff[:,-1] = orientation_diff
     mse_loss = (diff**2).mean()
     return mse_loss
