@@ -204,7 +204,7 @@ if __name__ == '__main__':
                       help='what feature type goes into the pipeline')
     parser.add_argument('--training_set_size', default='high', type=str,
                       help='size of training set (low, med, or high)')
-    parser.add_argument('--num_actions', default=3, type=int.
+    parser.add_argument('--num_actions', default=3, type=int,
                       help='number of actions to train on (1, 2, or 3)')
     parser.add_argument('--weights', default=None, type=str,
                         help='path to weights file to resume training from. \
