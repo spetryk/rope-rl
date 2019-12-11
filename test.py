@@ -6,7 +6,7 @@ import torch
 import numpy as np
 import os
 
-from behavioral_cloning.data_loader.data_loaders import RopeTrajectoryDataset
+from behavioral_cloning_roperl.data_loader.data_loaders import RopeTrajectoryDataset
 from behavioral_cloning.model.model import BasicModel, ResNet18
 
 import torch
