@@ -56,7 +56,7 @@ def make_descriptors_images(cf, image_path, descriptor_stats_config):
     return res_a
 
 
-def normalize_descriptor(self, res, stats=None):
+def normalize_descriptor(res, stats=None):
     """
     Normalizes the descriptor into RGB color space
     :param res: numpy.array [H,W,D]
