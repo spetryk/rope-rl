@@ -26,25 +26,28 @@ def main(args):
                       'std': [0.229, 0.224, 0.225]}
         priya_stats = none_stats
 
+
     else:
         # Using depth images and not pretrained: single channel input
         # Mean and std dev of depth image train dataset
         with open('stats_pre_none.json') as f:
             none_stats = json.load(f)
-            none_transform = transforms.Compose([
-                transforms.Resize((224, 224)),
-                transforms.ToTensor(),
-                transforms.Normalize(none_stats['mean'], none_stats['std'])
-            ])
+            
 
         # Feature descriptors and not pretrained
         with open('stats_POST_priya.json') as f:
             priya_stats = json.load(f)
-            priya_transform = transforms.Compose([
-                transforms.Resize((224, 224)),
-                transforms.ToTensor(),
-                transforms.Normalize(priya_stats['mean'], priya_stats['std'])
-            ])
+            
+    none_transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(none_stats['mean'], none_stats['std'])
+    ])
+    priya_transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(priya_stats['mean'], priya_stats['std'])
+    ])
 
 
     test_dataset_none = RopeTrajectoryDataset(args.test_dir, args.network_dir, args.network, 
