@@ -42,10 +42,11 @@ def mse_loss(pred, targets):
     """
     diff = pred - targets
     orientation_diff = torch.abs(diff[:,-1])
-    if len(orientation_diff[orientation_diff >= np.pi/2.]) > 0:
-        orientation_diff[orientation_diff[orientation_diff >=   np.pi/2.] < 3*np.pi/2.] -=   np.pi
-    if len(orientation_diff[orientation_diff >= 3*np.pi/2.]) > 0:
-           orientation_diff[orientation_diff[orientation_diff >= 3*np.pi/2.] < 2*np.pi] -= 2*np.pi
+    pi_mask     = ((orientation_diff >=   np.pi/2.) * (orientation_diff < 3*np.pi/2.)).float()
+    pi_mask     = pi_mask * -np.pi
+    two_pi_mask = ((orientation_diff >= 3*np.pi/2.) * (orientation_diff <    2*np.pi)).float()
+    two_pi_mask = two_pi_mask * (-2.*np.pi)
+    orientation_diff = orientation_diff + pi_mask + two_pi_mask
     diff[:,-1] = orientation_diff
     mse_loss = (diff**2).mean()
     return mse_loss
