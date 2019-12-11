@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 import argparse
 import collections
 import torch
@@ -5,7 +7,7 @@ import numpy as np
 import os
 
 from behavioral_cloning.data_loader.data_loaders import RopeTrajectoryDataset
-from behavioral_cloning.model.model import BasicModel
+from behavioral_cloning.model.model import BasicModel, ResNet18
 
 import torch
 import torch.nn as nn
