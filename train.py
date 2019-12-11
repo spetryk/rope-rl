@@ -3,6 +3,7 @@ import collections
 import torch
 import numpy as np
 import os
+import json
 
 from behavioral_cloning.data_loader.data_loaders import RopeTrajectoryDataset
 from behavioral_cloning.model.model import BasicModel, ResNet18
@@ -52,24 +53,22 @@ def main(args):
     if args.pretrained:
         # Use ImageNet stats, for both feature desc and depth image networks
         stats = {'mean': [0.485, 0.456, 0.406],
-                 'std_dev': [0.229, 0.224, 0.225]}
+                 'std': [0.229, 0.224, 0.225]}
     elif args.features != 'priya':
         # Using depth images and not pretrained: single channel input
         # Mean and std dev of depth image train dataset
-        stats = {'mean': [0.0331],
-                 'std_dev': [0.1305]}
+        with open('stats_pre_none.json') as f:
+            stats = json.load(f)
     else:
         # Feature descriptors and not pretrained
-        raise Exception # find mean and std of feature train dataset
-        #stats = {'mean': [0.0331] * 3,
-        #         'std_dev': [0.1305] * 3}
+        with open('stats_POST_priya.json') as f:
+            stats = json.load(f)
 
     # before this transform, image needs to be PIL Image with values in between [0, 255]
-
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
-        transforms.Normalize(stats['mean'], stats['std_dev'])
+        transforms.Normalize(stats['mean'], stats['std'])
     ])
 
     rope_dataset = RopeTrajectoryDataset(args.data_dir, args.network_dir, args.network,
