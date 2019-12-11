@@ -72,10 +72,10 @@ def main(args):
     ])
 
     rope_dataset = RopeTrajectoryDataset(args.data_dir, args.network_dir, args.network,
-                                         cfg_dir=args.config, transform=transform, features=args.features, dataset_fraction=dataset_fraction, pretrained=args.pretrained)
+                                         cfg_dir=args.config, transform=transform, features=args.features, dataset_fraction=dataset_fraction, pretrained=args.pretrained, num_actions=args.num_actions)
 
     val_dataset = RopeTrajectoryDataset(args.val_dir, args.network_dir, args.network,
-                                         cfg_dir=args.config, transform=transform, features=args.features, pretrained=args.pretrained)
+                                         cfg_dir=args.config, transform=transform, features=args.features, pretrained=args.pretrained, num_actions=args.num_actions)
     dataloader = DataLoader(rope_dataset, batch_size=args.batch_size, shuffle=True,
                             num_workers=args.num_workers)
     val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True,
