@@ -36,6 +36,18 @@ def get_device(cuda):
     return device
 
 
+def mse_loss(pred, targets):
+    """
+    MSE loss, accounting for real angle differences in orientation
+    """
+    diff = pred - targets.cuda()
+    orientation_diff = torch.abs(diff[:,-1])
+    orientation_diff[orientation_diff[orientation_diff >=   np.pi/2.] < 3*np.pi/2.] -=   np.pi
+    orientation_diff[orientation_diff[orientation_diff >= 3*np.pi/2.] < 2*np.pi]    -= 2*np.pi
+    diff[:,-1] = orientation_diff
+    mse_loss = (diff**2).mean()
+    return mse_loss
+
 def main(args):
 
     writer = SummaryWriter(comment="_{}_{}".format(args.features, args.training_set_size))
@@ -84,7 +96,7 @@ def main(args):
     model = ResNet18(args.pretrained, channels=1 if not args.pretrained and args.features == 'none' else 3)
     model = model.float().cuda()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
-    criterion = nn.MSELoss()
+    #criterion = nn.MSELoss()
 
     if args.weights is not None:
         # Load in weights to resume training
