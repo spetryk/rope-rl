@@ -17,9 +17,9 @@ from tools.find_correspondences import CorrespondenceFinder
 
 class RopeTrajectoryDataset(Dataset):
     """ Rope trajectory dataset """
-    def __init__(self, data_dir, network_dir, network, cfg_dir='../cfg', transform=None, features='priya',  dataset_fraction=1, save_im=False, pretrained=True):
+    def __init__(self, data_dir, network_dir, network, cfg_dir='../cfg', transform=None, features='priya',  dataset_fraction=1, save_im=False, pretrained=True, num_actions=3):
         self.data_dir = data_dir
-        self.timestamps, self.depth_list, self.json_list, self.mask_list, self.npy_list, self.desc_list = self.filter_trajectories(dataset_fraction)
+        self.timestamps, self.depth_list, self.json_list, self.mask_list, self.npy_list, self.desc_list = self.filter_trajectories(dataset_fraction, num_actions)
 
         # Path to network
         network_path = os.path.join(network_dir, network)
@@ -81,7 +81,7 @@ class RopeTrajectoryDataset(Dataset):
     def __len__(self):
         return len(self.depth_list)
 
-    def filter_trajectories(self, dataset_fraction):
+    def filter_trajectories(self, dataset_fraction, num_actions):
         # filter filenames that are incomplete trajectories
         files = os.listdir(os.path.join(self.data_dir, "json"))
         print("data", self.data_dir, "dataset_fraction", dataset_fraction)
@@ -100,7 +100,7 @@ class RopeTrajectoryDataset(Dataset):
         for ts in tags:
             if tags.count(ts) == 3 and ts not in timestamps:
                 timestamps.add(ts)
-                for i in range(3):
+                for i in range(num_actions):
                     ob_idx = 'start' if i == 0 else str(i-1)
                     ac_idx = str(i)
                     depth_list.append(os.path.join(self.data_dir, "depth/", '{}_segdepth_{}.png'.format(ts, ob_idx)))
