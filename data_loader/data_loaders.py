@@ -43,16 +43,17 @@ class RopeTrajectoryDataset(Dataset):
         desc_path = self.desc_list[idx]
 
         save_file_name = os.path.basename(depth_path).split(".")[0]
-        print(save_file_name)
         if self.features == 'priya':
             #image = self.make_descriptors_images(depth_path)
             image = Image.open(desc_path).convert('RGB')
+            save_file_name += "_priya"
             if self.save_im:
                 save_file_name = os.path.join('data/res/', '{}_res_priya.png'.format(os.path.basename(depth_path)))
                 print('saving feat. to: {}', save_file_name)
                 plt.imsave(save_file_name, image)
         else:
             image = Image.open(depth_path).convert('RGB')
+            save_file_name += "_none"
             if not self.pretrained:
                 # Take just one channel
                 image = np.array(image)[0,:,:]

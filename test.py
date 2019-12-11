@@ -71,14 +71,14 @@ def main(args):
             best_model = os.path.join(mdir, files[-1])
             print('...processing: {}'.format(best_model))
             if feat is 'none':
-                info[feat] = (eval_model(test_dataloader_none, best_model, feat, args.pretrained))
+                info[feat] = (eval_model(test_dataloader_none, best_model, feat, args.pretrained, args.save_dir))
             else:
-                info[feat] = (eval_model(test_dataloader_priya, best_model, feat, args.pretrained))
+                info[feat] = (eval_model(test_dataloader_priya, best_model, feat, args.pretrained, args.save_dir))
 
         print('priya: {}'.format(info["none"]))
         print('none-: {}'.format(info["priya"]))
 
-def eval_model(dataloader, model_path, feat, pretrained):
+def eval_model(dataloader, model_path, feat, pretrained, save_dir):
     model = ResNet18(args.pretrained, channels=1 if not pretrained and feat == 'none' else 3).float()
     # model = BasicModel().float()
     model.load_state_dict(torch.load(model_path))
@@ -100,7 +100,7 @@ def eval_model(dataloader, model_path, feat, pretrained):
             plt.scatter([t[3].item()], [t[4].item()], c='r', marker='x') # drop [target]
             plt.scatter([p[0].item()], [p[1].item()], c='b', marker='o') # grasp [pred]
             plt.scatter([p[3].item()], [p[4].item()], c='b', marker='x') # drop [pred]
-            fn, ext = os.path.splitext(f)
+            fn = os.path.join(save_dir, fn)
             plt.savefig('{}_points.png'.format(fn))
             print('saving plot to:', '{}_points.png'.format(fn))
 
