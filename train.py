@@ -40,7 +40,7 @@ def mse_loss(pred, targets):
     """
     MSE loss, accounting for real angle differences in orientation
     """
-    diff = pred - targets.cuda()
+    diff = pred - targets
     orientation_diff = torch.abs(diff[:,-1])
     if len(orientation_diff[orientation_diff >= np.pi/2.]) > 0:
         orientation_diff[orientation_diff[orientation_diff >=   np.pi/2.] < 3*np.pi/2.] -=   np.pi
@@ -99,6 +99,7 @@ def main(args):
     model = model.float().cuda()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     #criterion = nn.MSELoss()
+    criterion = mse_loss
 
     if args.weights is not None:
         # Load in weights to resume training
