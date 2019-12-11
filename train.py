@@ -98,6 +98,8 @@ def main(args):
     best_validation_loss = None
     train_counter = 0
     validation_counter = 0
+    split_losses_train = None
+    split_losses_val = None
     for epoch in range(args.num_epoch):
         train_loss = 0.0
         for train_idx, (obs, targets, _) in enumerate(dataloader):
@@ -119,11 +121,18 @@ def main(args):
             optimizer.step()
             train_loss += loss.item()
 
+            manual_train_loss = np.mean((pred - targets.cuda())**2, axis=0)
+            if split_losses_train is None:
+                split_losses_train = manual_train_loss
+            else:
+                split_losses_train = np.vstack((split_losses_train, manual_train_loss))
+
+
             if train_idx % args.log_step == 0:
                 print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Perplexity: {:5.4f}'
                       .format(epoch, args.num_epoch, train_idx, total_step, loss.item(), np.exp(loss.item())))
-            
-            if args.model_path is not None and (((train_idx+1) % args.save_step == 0) or (train_idx == total_step-1)): 
+
+            if args.model_path is not None and (((train_idx+1) % args.save_step == 0) or (train_idx == total_step-1)):
                 model.eval()
                 validation_loss = 0.0
                 for val_idx, (obs, targets, _) in enumerate(val_dataloader):
@@ -137,6 +146,12 @@ def main(args):
                     targets.to(device)
                     loss = criterion(pred, targets.cuda())
                     validation_loss += loss.item()
+                    manual_val_loss = np.mean((pred - targets.cuda())**2, axis=0)
+                    if split_losses_val is None:
+                        split_losses_val = manual_val_loss
+                    else:
+                        split_losses_val = np.vstack((split_losses_val, manual_val_loss))
+
                 writer.add_scalar('Loss/validation', validation_loss / val_idx, validation_counter)
                 validation_counter += 1
 
@@ -163,7 +178,10 @@ def main(args):
         train_counter += 1
         print('Train loss: -----epoch {}----- : {}'.format(epoch, train_loss / train_idx))    
         print('Validation loss:               : {}'.format(validation_loss / val_idx)) 
+    np.save(os.path.join(vars(writer)['log_dir'], 'train_losses.npy'), split_losses_train)
+    np.save(os.path.join(vars(writer)['log_dir'], 'val_losses.npy'), split_losses_val)
     writer.close()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch Template')
