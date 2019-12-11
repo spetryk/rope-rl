@@ -19,9 +19,9 @@ class RopeTrajectoryDataset(Dataset):
     """ Rope trajectory dataset """
     def __init__(self, data_dir, network_dir, network, cfg_dir='../cfg', transform=None, features='priya',  dataset_fraction=1, save_im=False, pretrained=True):
         self.data_dir = data_dir
-        self.timestamps, self.depth_list, self.json_list, self.mask_list, self.npy_list = self.filter_trajectories(dataset_fraction)
+        self.timestamps, self.depth_list, self.json_list, self.mask_list, self.npy_list, self.desc_list = self.filter_trajectories(dataset_fraction)
 
-        # Path to network 
+        # Path to network
         network_path = os.path.join(network_dir, network)
         self.dcn = DenseCorrespondenceNetwork.from_model_folder(network_path, model_param_file=os.path.join(network_path, '003501.pth'))
         self.dcn.eval()
@@ -40,10 +40,12 @@ class RopeTrajectoryDataset(Dataset):
         json_path = self.json_list[idx]
         mask_path = self.mask_list[idx]
         npy_path = self.npy_list[idx]
+        desc_path = self.desc_list[idx]
 
         save_file_name = ''
         if self.features == 'priya':
-            image = self.make_descriptors_images(depth_path)
+            #image = self.make_descriptors_images(depth_path)
+            image = Image.open(desc_path).convert('RGB')
             if self.save_im:
                 save_file_name = os.path.join('data/res/', '{}_res_priya.png'.format(os.path.basename(depth_path)))
                 print('saving feat. to: {}', save_file_name)
@@ -93,6 +95,7 @@ class RopeTrajectoryDataset(Dataset):
         json_list = []
         mask_list = []
         npy_list = []
+        desc_list = []
 
         for ts in tags:
             if tags.count(ts) == 3 and ts not in timestamps:
@@ -104,11 +107,12 @@ class RopeTrajectoryDataset(Dataset):
                     json_list.append(os.path.join(self.data_dir, "json/", '{}_{}.json'.format(ts, ac_idx)))
                     mask_list.append(os.path.join(self.data_dir, "mask/", '{}_segmask_{}.png'.format(ts, ob_idx)))
                     npy_list.append(os.path.join(self.data_dir, "npy/", '{}_raw_depth_{}.npy'.format(ts, ob_idx)))
+                    desc_list.append(os.path.join(self.data_dir, "descriptor_images/", '{}_priya_descriptors_{}.png'.format(ts, ob_idx)))
 
         print("dataset_size", len(depth_list))
         dataset_size = int(round(len(depth_list) * dataset_fraction))
 
-        return list(set(timestamps))[:dataset_size], depth_list[:dataset_size], json_list[:dataset_size], mask_list[:dataset_size], npy_list[:dataset_size]
+        return list(set(timestamps))[:dataset_size], depth_list[:dataset_size], json_list[:dataset_size], mask_list[:dataset_size], npy_list[:dataset_size], desc_list[:dataset_size]
 
 
     def make_descriptors_images(self, image_path):
