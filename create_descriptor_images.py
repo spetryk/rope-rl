@@ -22,7 +22,7 @@ def main(args):
         dataset_stats = json.load(f)
     dataset_mean, dataset_std_dev = dataset_stats["mean"], dataset_stats["std_dev"]
     cf = CorrespondenceFinder(dcn, dataset_mean, dataset_std_dev)
-    descriptor_stats_config = os.path.join(network_path, 'descriptor_statistics.yaml')
+    descriptor_stats_config = "stats_pre_priya.json"
 
     for filename in os.listdir(args.depth_image_dir):
         depth_path = os.path.join(args.depth_image_dir, filename)
@@ -36,7 +36,7 @@ def main(args):
 
 
 def make_descriptors_images(cf, image_path, descriptor_stats_config):
-    rgb_a = Image.open(image_path).convert('RGB')
+    rgb_a = Image.open(image_path).convert('RGB').resize((640,480))
 
     # compute dense descriptors
     # This takes in a PIL image!
@@ -44,12 +44,19 @@ def make_descriptors_images(cf, image_path, descriptor_stats_config):
 
     # these are Variables holding torch.FloatTensors, first grab the data, then convert to numpy
     res_a = cf.dcn.forward_single_image_tensor(rgb_a_tensor).data.cpu().numpy()
-    #descriptor_image_stats = yaml.load(file(descriptor_stats_config), Loader=CLoader)
-    descriptor_image_stats = yaml.load(file(descriptor_stats_config))
-    res_a = normalize_descriptor(res_a, descriptor_image_stats["mask_image"])
+    with open(descriptor_stats_config) as f:
+        descriptor_image_stats = json.load(f)
+    res_a = normalize_descriptor(res_a, descriptor_image_stats)
+
+    # Convert to range [0,255] and float32
+    res_a = (res_a * 255.).astype(np.uint8)
+
+    # Convert to PIL Image
+    res_a =  transforms.ToPILImage()(res_a)
     return res_a
 
-def normalize_descriptor(res, stats=None):
+
+def normalize_descriptor(self, res, stats=None):
     """
     Normalizes the descriptor into RGB color space
     :param res: numpy.array [H,W,D]
