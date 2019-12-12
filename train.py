@@ -193,12 +193,6 @@ def main(args):
                 writer.add_scalar('Loss/validation', validation_loss / (val_idx+1), validation_counter)
                 validation_counter += 1
 
-                #import pdb; pdb.set_trace()
-
-                # Save per-output loss
-                manual_mse = (pred - targets.cuda())**2
-                print('manual mse: {}'.format(manual_mse.mean()))
-
                 if best_validation_loss is None or (validation_loss / (val_idx+1)) < best_validation_loss:
                     print("Validation Loss at epoch {} and step {}: {}... Previous Best Validation Loss: {}... saving model".format(epoch,
                                                                                                                                     train_idx,
@@ -259,7 +253,7 @@ if __name__ == '__main__':
     parser.add_argument('--features', default='priya', type=str,
                       help='what feature type goes into the pipeline')
     parser.add_argument('--training_set_size', default='high', type=str,
-                      help='size of training set (low, med, or high)')
+                      help='size of training set (low, medium, or high)')
     parser.add_argument('--weights', default=None, type=str,
                         help='path to weights file to resume training from. \
                         None if start from scratch')
