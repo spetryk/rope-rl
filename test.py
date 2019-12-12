@@ -85,6 +85,23 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
     model.eval()
     criterion = nn.MSELoss()
     test_loss = []
+
+    # Save the image outputs
+    target_grasp_x = []
+    target_grasp_y = []
+    target_drop_x= []
+    target_drop_y = []
+    predicted_grasp_x = []
+    predicted_drop_x = []
+    predicted_grasp_y = []
+    predicted_drop_y = []
+
+    size_titles = {"low":" 1/3 training_data", "med":" 2/3 training_data", "high":" all training_data"}
+    pretrained_title = " pretrained on ImageNet, finetuned on"
+    not_pretrained_title = " trained on"
+    feat_titles = {"none":" depth images", "priya": " descriptor images with"}
+
+
     for idx, (obs, targets, filenames) in enumerate(dataloader):
         pred = model(obs.float())
         t = torch.zeros(pred.shape)
@@ -94,20 +111,6 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
         loss = criterion(pred, targets)
         test_loss.append(loss.item())
         
-        # Save the image outputs
-        target_grasp_x = []
-        target_grasp_y = []
-        target_drop_x= []
-        target_drop_y = []
-        predicted_grasp_x = []
-        predicted_drop_x = []
-        predicted_grasp_y = []
-        predicted_drop_y = []
-
-        size_titles = {"low":" 1/3 training_data", "med":" 2/3 training_data", "high":" all training_data"}
-        pretrained_title = " pretrained on ImageNet, finetuned on"
-        not_pretrained_title = " trained on"
-        feat_titles = {"none":" depth images", "priya": " descriptor images with"}
 
         if pretrained:
             plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size])
@@ -116,18 +119,6 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
 
 
         for t, p, f in zip(targets, pred, filenames):
-            # if pretrained and feat == "none":
-            #     plt.figure(1)
-            #     plt.title("ResNet18 pretrained on ImageNet finetuned on depth images,")
-            # elif pretrained and feat == "priya":
-            #     plt.figure(2)
-            #     plt.title("ResNet18 pretrained on ImageNet finetuned on descriptor images")
-            # elif not pretrained and feat == "none":
-            #     plt.figure(3)
-            #     plt.title("ResNet18 trained on depth images")
-            # else:
-            #     plt.figure(4)
-            #     plt.title("ResNet18 trained on descriptor images")
             plt.figure()
             if pretrained:
                 plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size])
@@ -143,7 +134,7 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
             fn = os.path.join(save_dir, f)
             plt.savefig('{}_points.png'.format(fn))
             print('saving plot to:', '{}_points.png'.format(fn))
-            plt.clf()
+            plt.close()
             
             target_grasp_x.append(t[0].item())
             target_grasp_y.append(t[1].item())
@@ -155,6 +146,9 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
             predicted_drop_x.append(p[3].item())
             predicted_drop_y.append(p[4].item())
             
+    plt.figure(figsize=[10,10])
+    plt.xlim(.2, .65)
+    plt.ylim(-.2, .35)
     if pretrained:
         plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size])
     else:
