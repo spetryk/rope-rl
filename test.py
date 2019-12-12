@@ -92,7 +92,8 @@ def mse_loss(pred, targets):
     orientation_diff = orientation_diff + pi_mask + two_pi_mask
     mask = torch.ones(diff.shape).float().cuda()
     mask[:,-1] = orientation_diff
-    diff = diff.detach().cpu().numpy() * mask
+    diff = diff.detach().cpu()
+    diff *= mask.detach().cpu()
     mse_loss = (diff**2).mean()
     return mse_loss
 
@@ -167,11 +168,11 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
             # plt.ylim([-.2, .35])
             # plt.legend()
             # fn = os.path.join(save_dir, f)
-            # i = f.split("_")[-2]
-            # if i == "start":
-            #     i = 0
-            # else:
-            #     i = int(i) + 1
+            i = f.split("_")[-2]
+            if i == "start":
+                i = 0
+            else:
+                i = int(i) + 1
 
             # plt.savefig('{}_points.png'.format(fn))
             # print('saving plot to:', '{}_points.png'.format(fn))
