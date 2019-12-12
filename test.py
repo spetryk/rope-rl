@@ -136,7 +136,7 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
             if i == "start":
                 i = 0
             else:
-                i = int(i)
+                i = int(i) + 1
 
             plt.savefig('{}_points.png'.format(fn))
             print('saving plot to:', '{}_points.png'.format(fn))
