@@ -17,11 +17,11 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 
-
+import json
 import matplotlib.pyplot as plt
 
 # fix random seeds for reproducibility
-SEED = 123
+SEED = 12
 torch.manual_seed(SEED)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
@@ -83,8 +83,8 @@ def main(args):
             else:
                 info[feat] = (eval_model(test_dataloader_priya, best_model, feat, args.pretrained, args.save_dir, size))
 
-        print('priya: {}'.format(info["none"]))
-        print('none-: {}'.format(info["priya"]))
+        print('priya: {}'.format(info["priya"]))
+        print('none-: {}'.format(info["none"]))
 
 
 def mse_loss(pred, targets):
