@@ -157,9 +157,9 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
         plt.xlim(.2, .65)
         plt.ylim(-.2, .35)
         if pretrained:
-            plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size] + "; action: " + str(i+1))
+            plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size] + "; action: " + str(i))
         else:
-            plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size] + "; action: " + str(i+1))
+            plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size] + "; action: " + str(i))
         plt.scatter(target_grasp_x[i], target_grasp_y[i], c='r', marker='o', label="ground truth grasp") # grasp [target]
         plt.scatter(target_drop_x[i], target_drop_y[i], c='r', marker='x', label="ground truth drop") # drop [target]
         plt.scatter(predicted_grasp_x[i], predicted_grasp_y[i], c='b', marker='o', label="predicted grasp") # grasp [pred]
