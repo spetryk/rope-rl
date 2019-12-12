@@ -103,13 +103,13 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
             fn = os.path.join(save_dir, fn)
             plt.legend()
             if pretrained and feat == "none":
-                plt.title("Model pretrained on ImageNet using depth images")
-            elif  pretrained and feat == "priya":
-                plt.title("Model pretrained on ImageNet using descriptor images")
-            elif pretrained and feat == "none":
-                plt.title("Model pretrained on ImageNet using depth images")
-            else  pretrained and feat == "priya":
-                plt.title("Model pretrained on ImageNet using descriptor images")
+                plt.title("ResNet18 pretrained on ImageNet finetuned on depth images")
+            elif pretrained and feat == "priya":
+                plt.title("ResNet18 pretrained on ImageNet finetuned on descriptor images")
+            elif not pretrained and feat == "none":
+                plt.title("ResNet18 trained on depth images")
+            else:
+                plt.title("ResNet18 trained on descriptor images")
             plt.title("")
             plt.savefig('{}_points.png'.format(f))
             plt.figure()
