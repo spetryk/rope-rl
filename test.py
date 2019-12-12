@@ -102,7 +102,7 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
         predicted_grasp_x = []
         predicted_drop_x = []
         predicted_grasp_y = []
-        predicted_drop_x = []
+        predicted_drop_y = []
 
         size_titles = {"low":" 1/3 training_data", "med":" 2/3 training_data", "high":" all training_data"}
         pretrained_title = " pretrained on ImageNet, finetuned on"
