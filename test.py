@@ -95,41 +95,80 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
         test_loss.append(loss.item())
         
         # Save the image outputs
+        target_grasp_x = []
+        target_grasp_y = []
+        target_drop_x= []
+        target_drop_y = []
+        predicted_grasp_x = []
+        predicted_drop_x = []
+        predicted_grasp_y = []
+        predicted_drop_x = []
+
+        size_titles = {"low":" 1/3 training_data", "med":" 2/3 training_data", "high":" all training_data"}
+        pretrained_title = " pretrained on ImageNet, finetuned on"
+        not_pretrained_title = " trained on"
+        feat_titles = {"none":" depth images", "priya": " descriptor images with"}
+
+        if pretrained:
+            plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size])
+        else:
+            plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size])
+
+
         for t, p, f in zip(targets, pred, filenames):
-            
-            
-            if pretrained and feat == "none":
-                plt.figure(1)
-                plt.title("ResNet18 pretrained on ImageNet finetuned on depth images")
-            elif pretrained and feat == "priya":
-                plt.figure(2)
-                plt.title("ResNet18 pretrained on ImageNet finetuned on descriptor images")
-            elif not pretrained and feat == "none":
-                plt.figure(3)
-                plt.title("ResNet18 trained on depth images")
-            else:
-                plt.figure(4)
-                plt.title("ResNet18 trained on descriptor images")
-
-            plt.scatter([t[0].item()], [t[1].item()], c='r', marker='o', label="ground truth grasp") # grasp [target]
-            plt.scatter([t[3].item()], [t[4].item()], c='r', marker='x', label="ground truth drop") # drop [target]
-            plt.scatter([p[0].item()], [p[1].item()], c='b', marker='o', label="predicted grasp") # grasp [pred]
-            plt.scatter([p[3].item()], [p[4].item()], c='b', marker='x', label="predicted drop") # drop [pred]
-
+            # if pretrained and feat == "none":
+            #     plt.figure(1)
+            #     plt.title("ResNet18 pretrained on ImageNet finetuned on depth images,")
+            # elif pretrained and feat == "priya":
+            #     plt.figure(2)
+            #     plt.title("ResNet18 pretrained on ImageNet finetuned on descriptor images")
+            # elif not pretrained and feat == "none":
+            #     plt.figure(3)
+            #     plt.title("ResNet18 trained on depth images")
+            # else:
+            #     plt.figure(4)
+            #     plt.title("ResNet18 trained on descriptor images")
             plt.figure()
+            if pretrained:
+                plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size])
+            else:
+                plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size])
             plt.scatter([t[0].item()], [t[1].item()], c='r', marker='o', label="ground truth grasp") # grasp [target]
             plt.scatter([t[3].item()], [t[4].item()], c='r', marker='x', label="ground truth drop") # drop [target]
             plt.scatter([p[0].item()], [p[1].item()], c='b', marker='o', label="predicted grasp") # grasp [pred]
-            plt.scatter([p[3].item()], [p[4].item()], c='b', marker='x', label="predicted drop") # drop [pred]
+            plt.scatter([p[3].item()], [p[4].item()], c='b', marker='x', label="predicted drop") # drop [pred] 
+            plt.xlim([.2, .65])
+            plt.ylim([-.2, .35])
             plt.legend()
             fn = os.path.join(save_dir, f)
             plt.savefig('{}_points.png'.format(fn))
             print('saving plot to:', '{}_points.png'.format(fn))
-    for i in range(1,5):
-        plt.figure(i)
-        plt.legend()
-        fn = os.path.join(save_dir, "plt_figure_" + str(i))
-        plt.savefig('{}.png'.format(fn))
+            plt.clf()
+            
+            target_grasp_x.append(t[0].item())
+            target_grasp_y.append(t[1].item())
+            target_drop_x.append(t[3].item())
+            target_drop_y.append(t[4].item())
+
+            predicted_grasp_x.append(p[0].item())
+            predicted_grasp_y.append(p[1].item())
+            predicted_drop_x.append(p[3].item())
+            predicted_drop_y.append(p[4].item())
+            
+    if pretrained:
+        plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size])
+    else:
+        plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size])
+    plt.scatter(target_grasp_x, target_grasp_y, c='r', marker='o', label="ground truth grasp") # grasp [target]
+    plt.scatter(target_drop_x, target_drop_y, c='r', marker='x', label="ground truth drop") # drop [target]
+    plt.scatter(predicted_grasp_x, predicted_grasp_y, c='b', marker='o', label="predicted grasp") # grasp [pred]
+    plt.scatter(predicted_drop_x, predicted_drop_y, c='b', marker='x', label="predicted drop") # drop [pred]
+    plt.legend()
+    if pretrained:
+        fn = os.path.join(save_dir, str(feat) + "_" + str(size) + "_pretrained")
+    else:
+        fn = os.path.join(save_dir, str(feat) + "_" + str(size) + "_NOT_pretrained")
+    plt.savefig('{}.png'.format(fn))
 
     return (np.sum(test_loss), np.mean(test_loss), np.std(test_loss))
 
