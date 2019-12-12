@@ -78,12 +78,30 @@ def main(args):
         print('priya: {}'.format(info["none"]))
         print('none-: {}'.format(info["priya"]))
 
+
+def mse_loss(pred, targets):
+    """
+    MSE loss, accounting for real angle differences in orientation
+    """
+    diff = pred - targets
+    orientation_diff = torch.abs(diff[:,-1])
+    pi_mask     = ((orientation_diff >=   np.pi/2.) * (orientation_diff < 3*np.pi/2.)).float()
+    pi_mask     = pi_mask * -np.pi
+    two_pi_mask = ((orientation_diff >= 3*np.pi/2.) * (orientation_diff <    2*np.pi)).float()
+    two_pi_mask = two_pi_mask * (-2.*np.pi)
+    orientation_diff = orientation_diff + pi_mask + two_pi_mask
+    mask = torch.ones(diff.shape).float().cuda()
+    mask[:,-1] = orientation_diff
+    diff = diff * mask
+    mse_loss = (diff**2).mean()
+    return mse_loss
+
 def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
     model = ResNet18(args.pretrained, channels=1 if not pretrained and feat == 'none' else 3).float()
     # model = BasicModel().float()
     model.load_state_dict(torch.load(model_path))
     model.eval()
-    criterion = nn.MSELoss()
+    criterion = mse_loss()
     test_loss = []
 
     # Save the image outputs
@@ -112,35 +130,35 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
         test_loss.append(loss.item())
         
 
-        if pretrained:
-            plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size])
-        else:
-            plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size])
+        # if pretrained:
+        #     plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size])
+        # else:
+        #     plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size])
 
 
         for t, p, f in zip(targets, pred, filenames):
-            plt.figure()
-            if pretrained:
-                plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size])
-            else:
-                plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size])
-            plt.scatter([t[0].item()], [t[1].item()], c='r', marker='o', label="ground truth grasp") # grasp [target]
-            plt.scatter([t[3].item()], [t[4].item()], c='r', marker='x', label="ground truth drop") # drop [target]
-            plt.scatter([p[0].item()], [p[1].item()], c='b', marker='o', label="predicted grasp") # grasp [pred]
-            plt.scatter([p[3].item()], [p[4].item()], c='b', marker='x', label="predicted drop") # drop [pred] 
-            plt.xlim([.2, .65])
-            plt.ylim([-.2, .35])
-            plt.legend()
-            fn = os.path.join(save_dir, f)
-            i = f.split("_")[-2]
-            if i == "start":
-                i = 0
-            else:
-                i = int(i) + 1
+            # plt.figure()
+            # if pretrained:
+            #     plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size])
+            # else:
+            #     plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size])
+            # plt.scatter([t[0].item()], [t[1].item()], c='r', marker='o', label="ground truth grasp") # grasp [target]
+            # plt.scatter([t[3].item()], [t[4].item()], c='r', marker='x', label="ground truth drop") # drop [target]
+            # plt.scatter([p[0].item()], [p[1].item()], c='b', marker='o', label="predicted grasp") # grasp [pred]
+            # plt.scatter([p[3].item()], [p[4].item()], c='b', marker='x', label="predicted drop") # drop [pred] 
+            # plt.xlim([.2, .65])
+            # plt.ylim([-.2, .35])
+            # plt.legend()
+            # fn = os.path.join(save_dir, f)
+            # i = f.split("_")[-2]
+            # if i == "start":
+            #     i = 0
+            # else:
+            #     i = int(i) + 1
 
-            plt.savefig('{}_points.png'.format(fn))
-            print('saving plot to:', '{}_points.png'.format(fn))
-            plt.close()
+            # plt.savefig('{}_points.png'.format(fn))
+            # print('saving plot to:', '{}_points.png'.format(fn))
+            # plt.close()
                 
             target_grasp_x[i].append(t[0].item())
             target_grasp_y[i].append(t[1].item())
