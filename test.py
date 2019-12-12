@@ -163,7 +163,7 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
         plt.scatter(target_grasp_x[i], target_grasp_y[i], c='r', marker='o', label="ground truth grasp") # grasp [target]
         plt.scatter(target_drop_x[i], target_drop_y[i], c='r', marker='x', label="ground truth drop") # drop [target]
         plt.scatter(predicted_grasp_x[i], predicted_grasp_y[i], c='b', marker='o', label="predicted grasp") # grasp [pred]
-        plt.scatter(predicted_drop_x,[i] predicted_drop_y[i], c='b', marker='x', label="predicted drop") # drop [pred]
+        plt.scatter(predicted_drop_x[i], predicted_drop_y[i], c='b', marker='x', label="predicted drop") # drop [pred]
         plt.legend()
         if pretrained:
             fn = os.path.join(save_dir, str(feat) + "_" + str(size) + "_pretrained_action_" + str(i))
