@@ -64,7 +64,7 @@ def main(args):
     model_paths = []
     for size in ['high', 'med', 'low']:
         info = {}
-        for feat in ['none', 'priya']:
+        for feat in ['priya', 'none']:
             mdir = os.path.join(args.model_dir, feat, size)
             files = os.listdir(mdir)
             files.sort(key=lambda f: int(filter(str.isdigit, f)))
@@ -96,24 +96,40 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
         
         # Save the image outputs
         for t, p, f in zip(targets, pred, filenames):
+            
+            
+            if pretrained and feat == "none":
+                plt.figure(1)
+                plt.title("ResNet18 pretrained on ImageNet finetuned on depth images")
+            elif pretrained and feat == "priya":
+                plt.figure(2)
+                plt.title("ResNet18 pretrained on ImageNet finetuned on descriptor images")
+            elif not pretrained and feat == "none":
+                plt.figure(3)
+                plt.title("ResNet18 trained on depth images")
+            else:
+                plt.figure(4)
+                plt.title("ResNet18 trained on descriptor images")
+
             plt.scatter([t[0].item()], [t[1].item()], c='r', marker='o', label="ground truth grasp") # grasp [target]
             plt.scatter([t[3].item()], [t[4].item()], c='r', marker='x', label="ground truth drop") # drop [target]
             plt.scatter([p[0].item()], [p[1].item()], c='b', marker='o', label="predicted grasp") # grasp [pred]
             plt.scatter([p[3].item()], [p[4].item()], c='b', marker='x', label="predicted drop") # drop [pred]
-            fn = os.path.join(save_dir, f)
-            plt.legend()
-            if pretrained and feat == "none":
-                plt.title("ResNet18 pretrained on ImageNet finetuned on depth images")
-            elif pretrained and feat == "priya":
-                plt.title("ResNet18 pretrained on ImageNet finetuned on descriptor images")
-            elif not pretrained and feat == "none":
-                plt.title("ResNet18 trained on depth images")
-            else:
-                plt.title("ResNet18 trained on descriptor images")
-            plt.title("")
-            plt.savefig('{}_points.png'.format(fn))
+
             plt.figure()
+            plt.scatter([t[0].item()], [t[1].item()], c='r', marker='o', label="ground truth grasp") # grasp [target]
+            plt.scatter([t[3].item()], [t[4].item()], c='r', marker='x', label="ground truth drop") # drop [target]
+            plt.scatter([p[0].item()], [p[1].item()], c='b', marker='o', label="predicted grasp") # grasp [pred]
+            plt.scatter([p[3].item()], [p[4].item()], c='b', marker='x', label="predicted drop") # drop [pred]
+            plt.legend()
+            fn = os.path.join(save_dir, f)
+            plt.savefig('{}_points.png'.format(fn))
             print('saving plot to:', '{}_points.png'.format(fn))
+    for i in range(1,5):
+        plt.figure(i)
+        plt.legend()
+        fn = os.path.join(save_dir, "plt_figure_" + str(i))
+        plt.savefig('{}.png'.format(fn))
 
     return (np.sum(test_loss), np.mean(test_loss), np.std(test_loss))
 
