@@ -92,9 +92,26 @@ def mse_loss(pred, targets):
     orientation_diff = orientation_diff + pi_mask + two_pi_mask
     mask = torch.ones(diff.shape).float().cuda()
     mask[:,-1] = orientation_diff
-    diff = diff * mask
+    diff = diff.detach().cpu().numpy() * mask
     mse_loss = (diff**2).mean()
     return mse_loss
+
+def mse_loss_separated(pred, targets):
+    """
+    MSE loss, accounting for real angle differences in orientation
+    """
+    diff = pred - targets
+    orientation_diff = torch.abs(diff[:,-1])
+    pi_mask     = ((orientation_diff >=   np.pi/2.) * (orientation_diff < 3*np.pi/2.)).float()
+    pi_mask     = pi_mask * -np.pi
+    two_pi_mask = ((orientation_diff >= 3*np.pi/2.) * (orientation_diff <    2*np.pi)).float()
+    two_pi_mask = two_pi_mask * (-2.*np.pi)
+    orientation_diff = orientation_diff + pi_mask + two_pi_mask
+    mask = torch.ones(diff.shape).float()
+    mask[:,-1] = orientation_diff
+    diff = diff.detach().cpu().numpy() * mask
+    mse_loss = (diff**2)
+    return np.mean(mse_loss, axis=0)
 
 def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
     model = ResNet18(args.pretrained, channels=1 if not pretrained and feat == 'none' else 3).float()
