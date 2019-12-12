@@ -53,6 +53,26 @@ def mse_loss(pred, targets):
     mse_loss = (diff**2).mean()
     return mse_loss
 
+
+
+def mse_loss_separated(pred, targets):
+    """
+    MSE loss, accounting for real angle differences in orientation
+    """
+    diff = pred - targets
+    orientation_diff = torch.abs(diff[:,-1])
+    pi_mask     = ((orientation_diff >=   np.pi/2.) * (orientation_diff < 3*np.pi/2.)).float()
+    pi_mask     = pi_mask * -np.pi
+    two_pi_mask = ((orientation_diff >= 3*np.pi/2.) * (orientation_diff <    2*np.pi)).float()
+    two_pi_mask = two_pi_mask * (-2.*np.pi)
+    orientation_diff = orientation_diff + pi_mask + two_pi_mask
+    mask = torch.ones(diff.shape).float()
+    mask[:,-1] = orientation_diff
+    diff = diff * mask
+    mse_loss = (diff**2).detach().cpu().numpy()
+    return np.mean(mse_loss, axis=0)
+
+
 def main(args):
 
     writer = SummaryWriter(comment="_{}_{}".format(args.features, args.training_set_size))
@@ -139,7 +159,7 @@ def main(args):
             optimizer.step()
             train_loss += loss.item()
 
-            manual_train_loss = np.mean(((pred - targets.cuda())**2).detach().cpu().numpy(), axis=0)
+            manual_train_loss = mse_loss_separated(pred, targets.cuda())
             if split_losses_train is None:
                 split_losses_train = manual_train_loss
             else:
@@ -164,7 +184,7 @@ def main(args):
                     targets.to(device)
                     loss = criterion(pred, targets.cuda())
                     validation_loss += loss.item()
-                    manual_val_loss = np.mean(((pred - targets.cuda())**2).detach().cpu().numpy(), axis=0)
+                    manual_val_loss = mse_loss_separated(pred, targets.cuda())
                     if split_losses_val is None:
                         split_losses_val = manual_val_loss
                     else:
