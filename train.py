@@ -138,6 +138,7 @@ def main(args):
     validation_counter = 0
     split_losses_train = None
     split_losses_val = None
+    total_training_size = 0
     for epoch in range(args.num_epoch):
         train_loss = 0.0
         for train_idx, (obs, targets, _) in enumerate(dataloader):
@@ -146,18 +147,18 @@ def main(args):
             optimizer.zero_grad()
             obs = obs.float()
             obs.to(device)
-
+            batch_size = len(targets)
+            total_training_size += batch_size
             pred = model(obs.cuda())
             t = torch.zeros(pred.shape)
-            for i in range(0, len(targets)):
+            for i in range(0, batch_size):
                 t[:,i] = targets[i]
             targets = t.float()
             targets.to(device)
-
             loss = criterion(pred, targets.cuda())
             loss.backward()
             optimizer.step()
-            train_loss += loss.item()
+            train_loss += loss.item() * batch_size
 
             manual_train_loss = mse_loss_separated(pred, targets.cuda())
             if split_losses_train is None:
@@ -173,30 +174,32 @@ def main(args):
             if args.model_path is not None and (((train_idx+1) % args.save_step == 0) or (train_idx == total_step-1)):
                 model.eval()
                 validation_loss = 0.0
+                total_val_size = 0
                 for val_idx, (obs, targets, _) in enumerate(val_dataloader):
                     obs = obs.float()
                     obs.to(device)
                     pred = model(obs.cuda())
+                    val_batch_size = len(targets)
                     t = torch.zeros(pred.shape)
                     for i in range(0, len(targets)):
                         t[:,i] = targets[i]
                     targets = t.float()
                     targets.to(device)
                     loss = criterion(pred, targets.cuda())
-                    validation_loss += loss.item()
+                    validation_loss += loss.item() * val_batch_size
                     manual_val_loss = mse_loss_separated(pred, targets.cuda())
                     if split_losses_val is None:
                         split_losses_val = manual_val_loss
                     else:
                         split_losses_val = np.vstack((split_losses_val, manual_val_loss))
-
-                writer.add_scalar('Loss/validation', validation_loss / (val_idx+1), validation_counter)
+                validation_loss /= total_val_size
+                writer.add_scalar('Loss/validation', validation_loss, validation_counter)
                 validation_counter += 1
 
-                if best_validation_loss is None or (validation_loss / (val_idx+1)) < best_validation_loss:
+                if best_validation_loss is None or validation_loss < best_validation_loss:
                     print("Validation Loss at epoch {} and step {}: {}... Previous Best Validation Loss: {}... saving model".format(epoch,
                                                                                                                                     train_idx,
-                                                                                                                                    validation_loss / (val_idx+1),
+                                                                                                                                    validation_loss,
                                                                                                                                     best_validation_loss,
                                                                                                                                     ))
                     save_folder = os.path.join(args.model_path, args.features, args.training_set_size)
@@ -204,12 +207,13 @@ def main(args):
                         os.makedirs(save_folder)
                     save_path = os.path.join(save_folder, 'bc_model-{}-{}.ckpt'.format(epoch+1, train_idx+1))
                     torch.save(model.state_dict(), save_path)
-                    best_validation_loss = validation_loss / (val_idx+1)
-
-        writer.add_scalar('Loss/train', train_loss / (train_idx+1), train_counter)
+                    best_validation_loss = validation_loss
+                    
+        train_loss /= total_training_size
+        writer.add_scalar('Loss/train', train_loss, train_counter)
         train_counter += 1
-        print('Train loss: -----epoch {}----- : {}'.format(epoch, train_loss / (train_idx+1)))
-        print('Validation loss:               : {}'.format(validation_loss / (val_idx+1)))
+        print('Train loss: -----epoch {}----- : {}'.format(epoch, train_loss))
+        print('Validation loss:               : {}'.format(validation_loss))
     np.save(os.path.join(vars(writer)['log_dir'], 'train_losses.npy'), split_losses_train)
     np.save(os.path.join(vars(writer)['log_dir'], 'val_losses.npy'), split_losses_val)
     writer.close()
