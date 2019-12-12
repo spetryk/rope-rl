@@ -132,16 +132,17 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
 
 
     for idx, (obs, targets, filenames) in enumerate(dataloader):
+	test_batch_size = len(targets[0])
         pred = model(obs.float())
         t = torch.zeros(pred.shape)
+
         for i in range(0, len(targets)):
             t[:,i] = targets[i]
         targets = t.float()
         loss = criterion(pred, targets)
         
-        test_batch_size =  len(targets[0])
         test_loss += loss.item() * test_batch_size
-
+	total_test_size += test_batch_size
         # if pretrained:
         #     plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size])
         # else:
@@ -201,7 +202,7 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
             fn = os.path.join(save_dir, str(feat) + "_" + str(size) + "_NOT_pretrained_action_" + str(i))
         plt.savefig('{}.png'.format(fn))
 
-    return test_loss /= total_test_size
+    return test_loss / total_test_size
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch Template')
