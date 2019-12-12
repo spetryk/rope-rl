@@ -101,7 +101,7 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
     # model = BasicModel().float()
     model.load_state_dict(torch.load(model_path))
     model.eval()
-    criterion = mse_loss()
+    criterion = mse_loss
     test_loss = []
 
     # Save the image outputs
