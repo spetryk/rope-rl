@@ -68,7 +68,7 @@ def mse_loss_separated(pred, targets):
     orientation_diff = orientation_diff + pi_mask + two_pi_mask
     mask = torch.ones(diff.shape).float()
     mask[:,-1] = orientation_diff
-    diff = diff * mask
+    diff = diff * mask.cuda()
     mse_loss = (diff**2).detach().cpu().numpy()
     return np.mean(mse_loss, axis=0)
 
@@ -147,11 +147,11 @@ def main(args):
             optimizer.zero_grad()
             obs = obs.float()
             obs.to(device)
-            batch_size = len(targets)
+            batch_size = len(targets[0])
             total_training_size += batch_size
             pred = model(obs.cuda())
             t = torch.zeros(pred.shape)
-            for i in range(0, batch_size):
+            for i in range(0, len(targets)):
                 t[:,i] = targets[i]
             targets = t.float()
             targets.to(device)
@@ -179,15 +179,16 @@ def main(args):
                     obs = obs.float()
                     obs.to(device)
                     pred = model(obs.cuda())
-                    val_batch_size = len(targets)
-                    t = torch.zeros(pred.shape)
+                    val_batch_size = len(targets[0])
+		    t = torch.zeros(pred.shape)
                     for i in range(0, len(targets)):
                         t[:,i] = targets[i]
                     targets = t.float()
                     targets.to(device)
                     loss = criterion(pred, targets.cuda())
                     validation_loss += loss.item() * val_batch_size
-                    manual_val_loss = mse_loss_separated(pred, targets.cuda())
+                    total_val_size += val_batch_size
+		    manual_val_loss = mse_loss_separated(pred, targets.cuda())
                     if split_losses_val is None:
                         split_losses_val = manual_val_loss
                     else:
