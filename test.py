@@ -20,6 +20,14 @@ from torchvision import transforms
 
 import matplotlib.pyplot as plt
 
+# fix random seeds for reproducibility
+SEED = 123
+torch.manual_seed(SEED)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+np.random.seed(SEED)
+
+
 def main(args):
 
     if args.pretrained:
@@ -54,11 +62,11 @@ def main(args):
 
     test_dataset_none = RopeTrajectoryDataset(args.test_dir, args.network_dir, args.network, 
                                          cfg_dir=args.config, transform=none_transform, features='none', save_im=False, dataset_fraction=1, pretrained=args.pretrained)
-    test_dataloader_none = DataLoader(test_dataset_none, batch_size=32, shuffle=False)
+    test_dataloader_none = DataLoader(test_dataset_none, batch_size=32, shuffle=True)
 
     test_dataset_priya = RopeTrajectoryDataset(args.test_dir, args.network_dir, args.network, 
                                          cfg_dir=args.config, transform=priya_transform, features='priya', save_im=False, dataset_fraction=1, pretrained=args.pretrained)
-    test_dataloader_priya = DataLoader(test_dataset_priya, batch_size=32, shuffle=False)
+    test_dataloader_priya = DataLoader(test_dataset_priya, batch_size=32, shuffle=True)
 
 
     model_paths = []
