@@ -112,7 +112,8 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
     model.load_state_dict(torch.load(model_path))
     model.eval()
     criterion = mse_loss
-    test_loss = []
+    test_loss = 0
+    total_test_size = 0
 
     # Save the image outputs
     target_grasp_x = {0:[], 1:[], 2:[]}
@@ -137,8 +138,9 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
             t[:,i] = targets[i]
         targets = t.float()
         loss = criterion(pred, targets)
-        test_loss.append(loss.item())
         
+        test_batch_size =  len(targets[0])
+        test_loss += loss.item() * test_batch_size
 
         # if pretrained:
         #     plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size])
@@ -199,7 +201,7 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
             fn = os.path.join(save_dir, str(feat) + "_" + str(size) + "_NOT_pretrained_action_" + str(i))
         plt.savefig('{}.png'.format(fn))
 
-    return (np.sum(test_loss), np.mean(test_loss), np.std(test_loss))
+    return test_loss /= total_test_size
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch Template')
