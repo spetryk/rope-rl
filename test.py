@@ -111,7 +111,7 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
             else  pretrained and feat == "priya":
                 plt.title("Model pretrained on ImageNet using descriptor images")
             plt.title("")
-            plt.savefig('{}_points.png'.format(fn))
+            plt.savefig('{}_points.png'.format(f))
             plt.figure()
             print('saving plot to:', '{}_points.png'.format(fn))
 
