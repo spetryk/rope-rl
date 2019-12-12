@@ -87,14 +87,14 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
     test_loss = []
 
     # Save the image outputs
-    target_grasp_x = []
-    target_grasp_y = []
-    target_drop_x= []
-    target_drop_y = []
-    predicted_grasp_x = []
-    predicted_drop_x = []
-    predicted_grasp_y = []
-    predicted_drop_y = []
+    target_grasp_x = {0:[], 1:[], 2:[]}
+    target_grasp_y = {0:[], 1:[], 2:[]}
+    target_drop_x= {0:[], 1:[], 2:[]}
+    target_drop_y = {0:[], 1:[], 2:[]}
+    predicted_grasp_x = {0:[], 1:[], 2:[]}
+    predicted_drop_x = {0:[], 1:[], 2:[]}
+    predicted_grasp_y = {0:[], 1:[], 2:[]}
+    predicted_drop_y = {0:[], 1:[], 2:[]}
 
     size_titles = {"low":" 1/3 training_data", "med":" 2/3 training_data", "high":" all training_data"}
     pretrained_title = " pretrained on ImageNet, finetuned on"
@@ -132,37 +132,44 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
             plt.ylim([-.2, .35])
             plt.legend()
             fn = os.path.join(save_dir, f)
+            i = f.split("_")[-2]
+            if i == "start":
+                i = 1
+            else:
+                i = int(i) + 1
+
             plt.savefig('{}_points.png'.format(fn))
             print('saving plot to:', '{}_points.png'.format(fn))
             plt.close()
-            
-            target_grasp_x.append(t[0].item())
-            target_grasp_y.append(t[1].item())
-            target_drop_x.append(t[3].item())
-            target_drop_y.append(t[4].item())
+                
+            target_grasp_x[i].append(t[0].item())
+            target_grasp_y[i].append(t[1].item())
+            target_drop_x[i].append(t[3].item())
+            target_drop_y[i].append(t[4].item())
 
-            predicted_grasp_x.append(p[0].item())
-            predicted_grasp_y.append(p[1].item())
-            predicted_drop_x.append(p[3].item())
-            predicted_drop_y.append(p[4].item())
-            
-    plt.figure(figsize=[10,10])
-    plt.xlim(.2, .65)
-    plt.ylim(-.2, .35)
-    if pretrained:
-        plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size])
-    else:
-        plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size])
-    plt.scatter(target_grasp_x, target_grasp_y, c='r', marker='o', label="ground truth grasp") # grasp [target]
-    plt.scatter(target_drop_x, target_drop_y, c='r', marker='x', label="ground truth drop") # drop [target]
-    plt.scatter(predicted_grasp_x, predicted_grasp_y, c='b', marker='o', label="predicted grasp") # grasp [pred]
-    plt.scatter(predicted_drop_x, predicted_drop_y, c='b', marker='x', label="predicted drop") # drop [pred]
-    plt.legend()
-    if pretrained:
-        fn = os.path.join(save_dir, str(feat) + "_" + str(size) + "_pretrained")
-    else:
-        fn = os.path.join(save_dir, str(feat) + "_" + str(size) + "_NOT_pretrained")
-    plt.savefig('{}.png'.format(fn))
+            predicted_grasp_x[i].append(p[0].item())
+            predicted_grasp_y[i].append(p[1].item())
+            predicted_drop_x[i].append(p[3].item())
+            predicted_drop_y[i].append(p[4].item())
+    
+    for i in range(3):
+        plt.figure(figsize=[10,10])
+        plt.xlim(.2, .65)
+        plt.ylim(-.2, .35)
+        if pretrained:
+            plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size] + "action: " + str(i))
+        else:
+            plt.title("ResNet18" + pretrained_title + feat_titles[feat] + size_titles[size] + "action: " + str(i))
+        plt.scatter(target_grasp_x[i], target_grasp_y[i], c='r', marker='o', label="ground truth grasp") # grasp [target]
+        plt.scatter(target_drop_x[i], target_drop_y[i], c='r', marker='x', label="ground truth drop") # drop [target]
+        plt.scatter(predicted_grasp_x[i], predicted_grasp_y[i], c='b', marker='o', label="predicted grasp") # grasp [pred]
+        plt.scatter(predicted_drop_x,[i] predicted_drop_y[i], c='b', marker='x', label="predicted drop") # drop [pred]
+        plt.legend()
+        if pretrained:
+            fn = os.path.join(save_dir, str(feat) + "_" + str(size) + "_pretrained")
+        else:
+            fn = os.path.join(save_dir, str(feat) + "_" + str(size) + "_NOT_pretrained")
+        plt.savefig('{}.png'.format(fn))
 
     return (np.sum(test_loss), np.mean(test_loss), np.std(test_loss))
 
