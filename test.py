@@ -100,7 +100,7 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
             plt.scatter([t[3].item()], [t[4].item()], c='r', marker='x', label="ground truth drop") # drop [target]
             plt.scatter([p[0].item()], [p[1].item()], c='b', marker='o', label="predicted grasp") # grasp [pred]
             plt.scatter([p[3].item()], [p[4].item()], c='b', marker='x', label="predicted drop") # drop [pred]
-            fn = os.path.join(save_dir, fn)
+            fn = os.path.join(save_dir, f)
             plt.legend()
             if pretrained and feat == "none":
                 plt.title("ResNet18 pretrained on ImageNet finetuned on depth images")
@@ -111,7 +111,7 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
             else:
                 plt.title("ResNet18 trained on descriptor images")
             plt.title("")
-            plt.savefig('{}_points.png'.format(f))
+            plt.savefig('{}_points.png'.format(fn))
             plt.figure()
             print('saving plot to:', '{}_points.png'.format(fn))
 
