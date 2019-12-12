@@ -166,9 +166,9 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
         plt.scatter(predicted_drop_x,[i] predicted_drop_y[i], c='b', marker='x', label="predicted drop") # drop [pred]
         plt.legend()
         if pretrained:
-            fn = os.path.join(save_dir, str(feat) + "_" + str(size) + "_pretrained")
+            fn = os.path.join(save_dir, str(feat) + "_" + str(size) + "_pretrained_action_" + str(i))
         else:
-            fn = os.path.join(save_dir, str(feat) + "_" + str(size) + "_NOT_pretrained")
+            fn = os.path.join(save_dir, str(feat) + "_" + str(size) + "_NOT_pretrained_action_" + str(i))
         plt.savefig('{}.png'.format(fn))
 
     return (np.sum(test_loss), np.mean(test_loss), np.std(test_loss))
