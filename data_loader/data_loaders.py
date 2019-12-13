@@ -56,7 +56,7 @@ class RopeTrajectoryDataset(Dataset):
             save_file_name += "_none"
             if not self.pretrained:
                 # Take just one channel
-                image = np.array(image)[0,:,:]
+                image = np.array(image)[:,:,0]
                 image = Image.fromarray(image)
             if self.save_im:
                 save_file_name = os.path.join('data/res/', '{}_res_none.png'.format(os.path.basename(depth_path)))
