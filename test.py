@@ -130,6 +130,7 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
     not_pretrained_title = " trained on"
     feat_titles = {"none":" depth images", "priya": " descriptor images with"}
 
+    action_losses = {0:0, 1:0, 2:0}
 
     for idx, (obs, targets, filenames) in enumerate(dataloader):
         pred = model(obs.float())
@@ -171,6 +172,8 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
             # plt.savefig('{}_points.png'.format(fn))
             # print('saving plot to:', '{}_points.png'.format(fn))
             # plt.close()
+
+            action_losses[i] += criterion(p, t).item()
                 
             target_grasp_x[i].append(t[0].item())
             target_grasp_y[i].append(t[1].item())
@@ -183,6 +186,8 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
             predicted_drop_y[i].append(p[4].item())
     
     for i in range(3):
+        action_losses[i] * 3.0 / total_test_size
+
         plt.figure(figsize=[10,10])
         plt.xlim(.2, .65)
         plt.ylim(-.2, .35)
@@ -201,7 +206,7 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
             fn = os.path.join(save_dir, str(feat) + "_" + str(size) + "_NOT_pretrained_action_" + str(i))
         plt.savefig('{}.png'.format(fn))
 
-    return test_loss /= total_test_size
+    return test_loss /= total_test_size, action_losses
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch Template')
