@@ -174,7 +174,7 @@ def eval_model(dataloader, model_path, feat, pretrained, save_dir, size):
             # print('saving plot to:', '{}_points.png'.format(fn))
             # plt.close()
 
-            action_losses[i] += criterion(p, t).item()
+            action_losses[i] += criterion(torch.unsqueeze(p,0), torch.unsqueeze(t,0)).item()
                 
             target_grasp_x[i].append(t[0].item())
             target_grasp_y[i].append(t[1].item())
